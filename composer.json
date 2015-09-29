@@ -1,7 +1,7 @@
 {
     "name": "mainginski/sybase-eloquent",
     "description": "Eloquent module to run Sybase with minimal problems using Laravel 5.x.",
-    "type": library",
+    "type": "library",
     "authors": [
         {
             "name": "Gabriel Tadra Mainginski",
