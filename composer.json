@@ -11,9 +11,9 @@
     "minimum-stability": "dev",
     "require": {
 		"php": ">=5.5",
-		"laravel/framework": "5.*"
+		"laravel/framework": ">=5"
 	}
 	"autoload": {
-        "psr-4": { "Mainginski\\SybaseEloquent\\Database\\": "" }
+        "psr-0": { "Mainginski\\SybaseEloquent\\Database\\": "" }
     }
 }
