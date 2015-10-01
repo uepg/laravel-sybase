@@ -34,7 +34,7 @@
                     if($bind == $campo['name']) {    
                         if(in_array($campo['type'], $this->without_quotes)){
                                 $new_binds[$i] = $bindings[$i]/1;
-                        }else{
+                        }else{ 
                                 $new_binds[$i] = (string)$bindings[$i];
                         }
                         $i++;
