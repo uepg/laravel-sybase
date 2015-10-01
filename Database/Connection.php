@@ -8,7 +8,7 @@
         // https://bugs.php.net/bug.php?id=57655
         // 
         //Coloque aqui todos os tipos que não levam plicas
-        private $without_quotes = ['int', 'bigint', 'integer', 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit']; 
+        private $without_quotes = ['int' , 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit']; 
         
         /**
          * Set new bindings with specified column types to Sybase
@@ -28,13 +28,12 @@
 
             $queryRes = $this->getPdo()->query("select b.name, c.name AS type from sysobjects a noholdlock JOIN syscolumns b noholdlock ON  a.id = b.id JOIN systypes c noholdlock ON b.usertype = c.usertype and a.name = '".$text_inside[1][0]."'");
             $res = $queryRes->fetchAll(); //Pega os campos e seus tipos
-
             $i = 0;
             foreach($text_inside[1] as $ind=>$bind){
                 foreach($res as $campo) {
                     if($bind == $campo['name']) {    
                         if(in_array($campo['type'], $this->without_quotes)){
-                                $new_binds[$i] = (int)$bindings[$i];
+                                $new_binds[$i] = $bindings[$i]/1;
                         }else{
                                 $new_binds[$i] = (string)$bindings[$i];
                         }
