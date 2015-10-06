@@ -5,8 +5,6 @@
     
     class Connection extends BaseConnection {
         
-        // https://bugs.php.net/bug.php?id=57655
-        // 
         //Coloque aqui todos os tipos que não levam plicas
         private $without_quotes = ['int' , 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit']; 
         
@@ -17,7 +15,7 @@
 	 * @param  array   $bindings
          * @return mixed   $new_binds
          */
-        private function new_bindings($query, $bindings)
+        private function compileBindings($query, $bindings)
         {
             $bindings = $this->prepareBindings($bindings);
             
@@ -29,13 +27,13 @@
             $queryRes = $this->getPdo()->query("select b.name, c.name AS type from sysobjects a noholdlock JOIN syscolumns b noholdlock ON  a.id = b.id JOIN systypes c noholdlock ON b.usertype = c.usertype and a.name = '".$text_inside[1][0]."'");
             $res = $queryRes->fetchAll(); //Pega os campos e seus tipos
             $i = 0;
-            foreach($text_inside[1] as $ind=>$bind){
+            foreach($text_inside[1] as $bind){
                 foreach($res as $campo) {
                     if($bind == $campo['name']) {    
                         if(in_array($campo['type'], $this->without_quotes)){
-                                $new_binds[$i] = $bindings[$i]/1;
-                        }else{ 
-                                $new_binds[$i] = (string)$bindings[$i];
+                            $new_binds[$i] = $bindings[$i]/1;
+                        }else{
+                            $new_binds[$i] = (string)$bindings[$i];
                         }
                         $i++;
                         break;
@@ -52,8 +50,11 @@
 	 * @param  array  $bindings
          * @return string $query
         */
-        private function mount_new_query($query, $bindings){
-            $bindings = $this->new_bindings($query, $bindings);
+        // Poderia compilar novamente dos bindings usando os PDO::PARAM, porém, não tem nenhuma constante que lide
+        // com decimais, logo, a única maneira seria colocando PDO::PARAM_STR, que colocaria plicas.
+        // Detalhes: http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
+        private function compileNewQuery($query, $bindings){
+            $bindings = $this->compileBindings($query, $bindings);
 
             $newQuery = ""; 
             $partQuery = explode("?", $query);
@@ -67,7 +68,7 @@
                         }
                     }
             }
-            
+            var_dump($query);
             return $newQuery;    
         }
         
@@ -85,7 +86,7 @@
 		{
 			if ($me->pretending()) return array();
 
-                        return $this->getPdo()->query($this->mount_new_query($query, $bindings))->fetchAll($me->getFetchMode());
+                        return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());
 		});
 	}
         
@@ -103,7 +104,7 @@
             return $this->run($query, $bindings, function($me, $query, $bindings)
             {
                            if ($me->pretending()) return true;
-                           return $this->getPdo()->query($this->mount_new_query($query, $bindings));
+                           return $this->getPdo()->query($this->compileNewQuery($query, $bindings));
             });
         }
 
@@ -115,7 +116,7 @@
                     if ($me->pretending()) return 0;
 
 
-                    return $this->getPdo()->query($this->mount_new_query($query, $bindings))->rowCount();
+                    return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->rowCount();
             });
         }
         
