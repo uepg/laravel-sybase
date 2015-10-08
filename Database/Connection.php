@@ -29,7 +29,7 @@
             $i = 0;
             foreach($text_inside[1] as $bind){
                 foreach($res as $campo) {
-                    if($bind == $campo['name']) {    
+                    if($bind == $campo['name'] && $i<count($bindings)) {    
                         if(in_array($campo['type'], $this->without_quotes)){
                             $new_binds[$i] = $bindings[$i]/1;
                         }else{
@@ -68,6 +68,7 @@
                         }
                     }
             }
+            var_dump($query);
             return $newQuery;    
         }
         
@@ -88,7 +89,6 @@
                         return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());
 		});
 	}
-        
         
         /*
         * O PDO emperra com prepared statments, por isso, a query precisa ser criada
