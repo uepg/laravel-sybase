@@ -68,7 +68,6 @@
                         }
                     }
             }
-            var_dump($query);
             return $newQuery;    
         }
         
