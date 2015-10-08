@@ -14,6 +14,6 @@
 		"laravel/framework": "5.*"
 	},
 	"autoload": {
-        "psr-4": { "Mainginski\\SybaseEloquent\\Database\\": "" }
+        "psr-4": { "Mainginski\\SybaseEloquent\\Database\\": "/Database" }
     }
 }
