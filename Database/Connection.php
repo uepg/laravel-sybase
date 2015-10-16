@@ -5,7 +5,7 @@
     
     class Connection extends BaseConnection {
         
-        //Coloque aqui todos os tipos que não levam plicas
+		// All types without quotes in Sybase's query
         private $without_quotes = ['int' , 'numeric', 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit']; 
         
         /**
