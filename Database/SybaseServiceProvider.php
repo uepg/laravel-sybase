@@ -1,6 +1,6 @@
 <?php namespace Mainginski\SybaseEloquent\Database;
 
-use Mainginski\SybaseEloquent\Database\SqlServerConnection;
+use Mainginski\SybaseEloquent\Database\SybaseConnection;
 use Illuminate\Support\ServiceProvider;
 
 class SybaseServiceProvider extends ServiceProvider
@@ -22,7 +22,7 @@ class SybaseServiceProvider extends ServiceProvider
             list($connection, $database, $prefix, $config) = $parameters;
 
             // Next we can initialize the connection.
-            return new SqlServerConnection($connection, $database, $prefix, $config);
+            return new SybaseConnection($connection, $database, $prefix, $config);
         });
     }
 }

@@ -10,7 +10,7 @@ class SybaseGrammar extends Grammar {
 	 *
 	 * @var array
 	 */
-	protected $operators = array(
+        protected $operators = array(
 		'=', '<', '>', '<=', '>=', '!<', '!>', '<>', '!=',
 		'like', 'not like', 'between', 'ilike',
 		'&', '&=', '|', '|=', '^', '^=',
@@ -31,12 +31,10 @@ class SybaseGrammar extends Grammar {
 		// other database systems but is necessary for implementing features.
 		if ($query->offset > 0)
 		{
-			abort(501, "Offset function still doesn't work with Sybase. :(");
+                        abort(501, "Offset function still doesn't work with Sybase. :(");
 		}
-
 		return $this->concatenate($components);
 	}
-
 	/**
 	 * Compile the "select *" portion of the query.
 	 *
@@ -53,7 +51,7 @@ class SybaseGrammar extends Grammar {
 		// If there is a limit on the query, but not an offset, we will add the top
 		// clause to the query, which serves as a "limit" type clause within the
 		// SQL Server system similar to the limit keywords available in MySQL.
-		if ($query->limit > 0 && $query->offset <= 0)
+		if ($query->limit > 0)//&& $query->offset <= 0)
 		{
 			$select .= 'top '.$query->limit.' ';
 		}
