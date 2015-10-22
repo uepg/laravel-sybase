@@ -31,7 +31,7 @@ class SybaseGrammar extends Grammar {
 		// other database systems but is necessary for implementing features.
 		if ($query->offset > 0)
 		{
-			return $this->compileAnsiOffset($query, $components);
+			abort(501, "Offset function still doesn't work with Sybase. :(");
 		}
 
 		return $this->concatenate($components);
@@ -81,46 +81,6 @@ class SybaseGrammar extends Grammar {
 
 		return $from;
 	}
-
-	/**
-	 * Create a full ANSI offset clause for the query.
-	 *
-	 * @param  \Illuminate\Database\Query\Builder  $query
-	 * @param  array  $components
-	 * @return string
-	 */
-	protected function compileAnsiOffset(Builder $query, $components)
-	{
-		// An ORDER BY clause is required to make this offset query work, so if one does
-		// not exist we'll just create a dummy clause to trick the database and so it
-		// does not complain about the queries for not having an "order by" clause.
-		if ( ! isset($components['orders']))
-		{
-			$components['orders'] = 'order by (select 0)';
-		}
-
-		// We need to add the row number to the query so we can compare it to the offset
-		// and limit values given for the statements. So we will add an expression to
-		// the "select" that will give back the row numbers on each of the records.
-		$orderings = $components['orders'];
-
-		$components['columns'] .= $this->compileOver($orderings);
-
-		unset($components['orders']);
-
-		// Next we need to calculate the constraints that should be placed on the query
-		// to get the right offset and limit from our query but if there is no limit
-		// set we will just handle the offset only since that is all that matters.
-		$constraint = $this->compileRowConstraint($query);
-
-		$sql = $this->concatenate($components);
-
-		// We are now ready to build the final SQL query so we'll create a common table
-		// expression from the query and get the records with row numbers within our
-		// given limit and offset value that we just put on as a query constraint.
-		return $this->compileTableExpression($sql, $constraint);
-	}
-
 	/**
 	 * Compile the over statement for a table expression.
 	 *

@@ -5,9 +5,8 @@
     
     class Connection extends BaseConnection {
         
-		// All types without quotes in Sybase's query
-        private $without_quotes = ['int' , 'numeric', 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit']; 
-        
+	// All types without quotes in Sybase's query
+        private $without_quotes = ['int' , 'numeric', 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit', 'binary', 'varbinary', 'timestamp'];
         /**
          * Set new bindings with specified column types to Sybase
          * 
@@ -30,7 +29,7 @@
             foreach($text_inside[1] as $bind){
                 foreach($res as $campo) {
                     if($bind == $campo['name'] && $i<count($bindings)) {    
-                        if(in_array($campo['type'], $this->without_quotes)){
+                        if(in_array(strtolower($campo['type']), $this->without_quotes)){
                             $new_binds[$i] = $bindings[$i]/1;
                         }else{
                             $new_binds[$i] = (string)$bindings[$i];
@@ -53,7 +52,8 @@
         // Poderia compilar novamente dos bindings usando os PDO::PARAM, porém, não tem nenhuma constante que lide
         // com decimais, logo, a única maneira seria colocando PDO::PARAM_STR, que colocaria plicas.
         // Detalhes: http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
-        private function compileNewQuery($query, $bindings){
+        private function compileNewQuery($query, $bindings)
+        {
             $bindings = $this->compileBindings($query, $bindings);
 
             $newQuery = ""; 
@@ -83,9 +83,8 @@
 	{
 		return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
 		{
-			if ($me->pretending()) return array();
-
-                        return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());
+                    if ($me->pretending()) return array();
+                    return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());
 		});
 	}
         
@@ -101,21 +100,17 @@
             
             return $this->run($query, $bindings, function($me, $query, $bindings)
             {
-                           if ($me->pretending()) return true;
-                           return $this->getPdo()->query($this->compileNewQuery($query, $bindings));
+                if ($me->pretending()) return true;
+                return $this->getPdo()->query($this->compileNewQuery($query, $bindings));
             });
         }
 
         public function affectingStatement($query, $bindings = array())
         {   
-
             return $this->run($query, $bindings, function($me, $query, $bindings)
             {
-                    if ($me->pretending()) return 0;
-
-
-                    return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->rowCount();
+                if ($me->pretending()) return 0;
+                return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->rowCount();
             });
         }
-        
     }

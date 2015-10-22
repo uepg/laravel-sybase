@@ -8,3 +8,6 @@ Eloquent module to run Sybase with minimal problems using Laravel 5.x.
 - Run ``composer update``
 - Add to your providers in **./config./app.php**:
 ``Mainginski\SybaseEloquent\Database\SybaseServiceProvider::class``
+
+### Known Issues
+- Error 247 when working with a format different dates accepted by Sybase.
