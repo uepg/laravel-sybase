@@ -103,29 +103,73 @@ class SybaseConnection extends Connection {
          */
         private function compileBindings($query, $bindings)
         {
+            if(count($bindings)<=0){
+                return [];
+            }
+            
             $bindings = $this->prepareBindings($bindings);
+            $new_format = [];
             
-            $text_inside = [];
-            $new_binds   = [];
+            // * Temporary
+            $query_type = explode(' ', $query);
             
-            preg_match_all("/\[([^\]]*)\]/", $query, $text_inside);
-
-            $queryRes = $this->getPdo()->query("select b.name, c.name AS type from sysobjects a noholdlock JOIN syscolumns b noholdlock ON  a.id = b.id JOIN systypes c noholdlock ON b.usertype = c.usertype and a.name = '".$text_inside[1][0]."'");
-            $res = $queryRes->fetchAll(); //Pega os campos e seus tipos
-            $i = 0;
-            foreach($text_inside[1] as $bind){
-                foreach($res as $campo) {
-                    if($bind == $campo['name'] && $i<count($bindings)) {    
-                        if(in_array(strtolower($campo['type']), $this->without_quotes)){
-                            $new_binds[$i] = $bindings[$i]/1;
-                        }else{
-                            $new_binds[$i] = (string)$bindings[$i];
+            switch($query_type[0]){
+                case "select":
+                    $tables = explode('from', $query);
+                    $tables = explode('where', $tables[1]);
+                break;
+                case "insert":
+                    $tables = explode('(', $query, 2);
+                    $tables = explode('values', $tables[0]);
+                break;
+                case "update":
+                     $tables = explode('set', $query);
+                break;
+                case "delete":
+                    $tables = explode('where', $query);
+                break;
+            }
+            unset($query_type);
+            // Temporary *
+            
+            $tables = $tables[0];
+			
+            preg_match_all("/\[([^\]]*)\]/", $query, $arrQuery);
+            if(count($arrQuery[1]) == 0){
+                return $bindings;
+            }
+            preg_match_all("/\[([^\]]*)\]/", $tables, $arrTables);
+            $arrQuery = $arrQuery[1];
+            $arrTables = $arrTables[1];
+            
+            $ind = 0;
+            foreach($arrQuery as $campos){
+                if(in_array($campos, $arrTables)){
+                    $table = $campos;
+                    if(!array_key_exists($campos, $new_format)){
+                        $queryRes = $this->getPdo()->query("select b.name, c.name AS type from sysobjects a noholdlock JOIN syscolumns b noholdlock ON  a.id = b.id JOIN systypes c noholdlock ON b.usertype = c.usertype and a.name = '".$campos."'");
+                        $types[$campos] = $queryRes->fetchAll(\PDO::FETCH_ASSOC); //Pega os campos e seus tipos
+                        for($k = 0; $k < count($types[$campos]); $k++){
+                            $types[$campos][$types[$campos][$k]['name']] = $types[$campos][$k];
+                            unset($types[$campos][$k]);
                         }
-                        $i++;
-                        break;
+                        $new_format[$campos] = [];
                     }
+                }else{
+                    if(count($bindings)>$ind){
+                        array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
+                        if(in_array(strtolower($types[$table][$campos]['type']), $this->without_quotes)){
+                            $new_binds[$ind] = $bindings[$ind]/1;
+                        }else{
+                            $new_binds[$ind] = (string)$bindings[$ind];
+                        }
+                    }else{
+                        array_push($new_format[$table], ['campo' => $campos]);
+                    }
+                    $ind++;
                 }
             }
+
                         
             return $new_binds;
 	}
@@ -155,6 +199,7 @@ class SybaseConnection extends Connection {
                         }
                     }
             }
+			
             return $newQuery;    
         }
         
