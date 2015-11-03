@@ -1,6 +1,6 @@
 {
     "name": "uepg/laravel-sybase",
-    "description": "Eloquent module to run Sybase with minimal problems using Laravel 5.x.",
+    "description": "Sybase based Eloquent module extension for Laravel 5.x.",
     "type": "library",
     "authors": [
         {
