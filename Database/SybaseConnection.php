@@ -4,7 +4,7 @@ use Closure;
 use Exception;
 use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Illuminate\Database\Query\Processors\SqlServerProcessor;
-use Mainginski\SybaseEloquent\Database\Query\SybaseGrammar as QueryGrammar;
+use Uepg\LaravelSybase\Database\Query\SybaseGrammar as QueryGrammar;
 use Illuminate\Database\Schema\Grammars\SqlServerGrammar as SchemaGrammar;
 use Illuminate\Database\Connection;
 

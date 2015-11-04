@@ -1,11 +1,15 @@
 {
-    "name": "mainginski/sybase-eloquent",
-    "description": "Eloquent module to run Sybase with minimal problems using Laravel 5.x.",
+    "name": "uepg/laravel-sybase",
+    "description": "Sybase based Eloquent module extension for Laravel 5.x.",
     "type": "library",
     "authors": [
         {
             "name": "Gabriel Tadra Mainginski",
             "email": "13179626@uepg.br"
+        },
+        {
+            "name": "Ademir Mazer Junior",
+            "email": "mazer@uepg.br"
         }
     ],
     "minimum-stability": "dev",
@@ -14,6 +18,6 @@
 		"laravel/framework": "5.*"
 	},
 	"autoload": {
-        "psr-4": { "Mainginski\\SybaseEloquent\\Database\\": "/Database" }
+        "psr-4": { "Uepg\\LaravelSybase\\Database\\": "/Database" }
     }
 }
