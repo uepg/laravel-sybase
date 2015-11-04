@@ -1,4 +1,4 @@
-<?php namespace Mainginski\SybaseEloquent\Database\Query;
+<?php namespace Uepg\LaravelSybase\Database\Query;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar;

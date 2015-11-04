@@ -1,4 +1,4 @@
-<?php namespace Mainginski\SybaseEloquent\Database;
+<?php namespace Uepg\LaravelSybase\Database;
 
 use Closure;
 use Exception;

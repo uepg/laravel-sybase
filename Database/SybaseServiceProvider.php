@@ -1,6 +1,6 @@
-<?php namespace Mainginski\SybaseEloquent\Database;
+<?php namespace Uepg\LaravelSybase\Database;
 
-use Mainginski\SybaseEloquent\Database\SybaseConnection;
+use Uepg\LaravelSybase\Database\SybaseConnection;
 use Illuminate\Support\ServiceProvider;
 
 class SybaseServiceProvider extends ServiceProvider
