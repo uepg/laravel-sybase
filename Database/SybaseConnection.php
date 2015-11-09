@@ -5,7 +5,7 @@ use Exception;
 use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Illuminate\Database\Query\Processors\SqlServerProcessor;
 use Uepg\LaravelSybase\Database\Query\SybaseGrammar as QueryGrammar;
-use Illuminate\Database\Schema\Grammars\SqlServerGrammar as SchemaGrammar;
+use Uepg\LaravelSybase\Database\Schema\SybaseGrammar as SchemaGrammar;
 use Illuminate\Database\Connection;
 
 class SybaseConnection extends Connection {
@@ -199,7 +199,6 @@ class SybaseConnection extends Connection {
                         }
                     }
             }
-			
             return $newQuery;    
         }
         
