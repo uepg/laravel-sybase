@@ -193,6 +193,7 @@ class SybaseConnection extends Connection {
                     $newQuery .= $partQuery[$i];
                     if($i<count($bindings)){
                         if(is_string($bindings[$i])){
+                            $bindings[$i] = str_replace( "'", "''", $bindings[$i] );
                             $newQuery .= "'".$bindings[$i]."'";
                         }else{
                             $newQuery .= $bindings[$i];
