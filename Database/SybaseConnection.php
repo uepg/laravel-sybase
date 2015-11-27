@@ -98,7 +98,7 @@ class SybaseConnection extends Connection {
          * Set new bindings with specified column types to Sybase
          * 
          * @param  string  $query
-	 * @param  array   $bindings
+		 * @param  array   $bindings
          * @return mixed   $new_binds
          */
         private function compileBindings($query, $bindings)
@@ -147,8 +147,8 @@ class SybaseConnection extends Connection {
                 if(in_array($campos, $arrTables)){
                     $table = $campos;
                     if(!array_key_exists($campos, $new_format)){
-                        $queryRes = $this->getPdo()->query("select b.name, c.name AS type from sysobjects a noholdlock JOIN syscolumns b noholdlock ON  a.id = b.id JOIN systypes c noholdlock ON b.usertype = c.usertype and a.name = '".$campos."'");
-                        $types[$campos] = $queryRes->fetchAll(\PDO::FETCH_ASSOC); //Pega os campos e seus tipos
+                        $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$campos."'");
+                        $types[$campos] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
                         for($k = 0; $k < count($types[$campos]); $k++){
                             $types[$campos][$types[$campos][$k]['name']] = $types[$campos][$k];
                             unset($types[$campos][$k]);
