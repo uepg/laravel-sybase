@@ -110,42 +110,52 @@ class SybaseConnection extends Connection {
             $bindings = $this->prepareBindings($bindings);
             $new_format = [];
             
-            // * Temporary
             $query_type = explode(' ', $query);
-            
             switch($query_type[0]){
                 case "select":
-                    $tables = explode('from', $query);
-                    $tables = explode('where', $tables[1]);
+                    preg_match_all("/(?:from |join )(?'tables'.*?)(?: (?:on(?:(?!join ).)*|)where(?'attributes'.*)| on|$)/i" ,$query, $matches);
+                    
                 break;
                 case "insert":
-                    $tables = explode('(', $query, 2);
-                    $tables = explode('values', $tables[0]);
+                     preg_match("/(?'tables'.*) \(/i" ,$query, $matches);
+                     
                 break;
                 case "update":
-                     $tables = explode('set', $query);
+                    preg_match("/(?'tables'.*) set/i" ,$query, $matches);
+                    
                 break;
                 case "delete":
-                    $tables = explode('where', $query);
+                    preg_match("/(?'tables'.*) where/i" ,$query, $matches);
                 break;
             }
-            unset($query_type);
-            // Temporary *
             
-            $tables = $tables[0];
-			
-            preg_match_all("/\[([^\]]*)\]/", $query, $arrQuery);
+            $desQuery = array_intersect_key($matches, array_flip(array_filter(array_keys($matches), 'is_string')));
+            
+            if(is_array($desQuery['tables']) && is_array($desQuery['attributes'])){
+                $desQuery['tables'] = implode($desQuery['tables'], ' ');
+                $desQuery['attributes'] = implode($desQuery['attributes'], ' ');
+            }else{
+                $desQuery['attributes'] = $query; 
+            }
+            
+            unset($matches);
+            unset($query_type);
+            	
+            preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
             if(count($arrQuery[1]) == 0){
                 return $bindings;
             }
-            preg_match_all("/\[([^\]]*)\]/", $tables, $arrTables);
+            preg_match_all("/\[([^\]]*)\]/", $desQuery['tables'], $arrTables);
             $arrQuery = $arrQuery[1];
             $arrTables = $arrTables[1];
             
+           
             $ind = 0;
             foreach($arrQuery as $campos){
-                if(in_array($campos, $arrTables)){
+                
+                if(in_array($campos, $arrTables)) {//|| count($arrTables) == 1) &&  (isset($table) && $table != $arrTables)){
                     $table = $campos;
+                    
                     if(!array_key_exists($campos, $new_format)){
                         $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$campos."'");
                         $types[$campos] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
@@ -170,7 +180,6 @@ class SybaseConnection extends Connection {
                 }
             }
 
-                        
             return $new_binds;
 	}
         /**
