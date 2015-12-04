@@ -114,15 +114,12 @@ class SybaseConnection extends Connection {
             switch($query_type[0]){
                 case "select":
                     preg_match_all("/(?:from |join )(?'tables'.*?)(?: (?:on(?:(?!join ).)*|)where(?'attributes'.*)| on|$)/i" ,$query, $matches);
-                    
                 break;
                 case "insert":
-                     preg_match("/(?'tables'.*) \(/i" ,$query, $matches);
-                     
+                    preg_match("/(?'tables'.*) \(.*\) values/i" ,$query, $matches);
                 break;
                 case "update":
                     preg_match("/(?'tables'.*) set/i" ,$query, $matches);
-                    
                 break;
                 case "delete":
                     preg_match("/(?'tables'.*) where/i" ,$query, $matches);
