@@ -1,5 +1,5 @@
 # laravel-sybase
-Sybase based Eloquent module extension for Laravel 5.x.
+Sybase ASE based Eloquent module extension for Laravel 5.x.
 - Enables use of multiple kinds of fields.
 - Use default eloquent: works with odbc and dblib!
 - Migrations!
