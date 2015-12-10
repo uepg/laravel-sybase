@@ -142,12 +142,13 @@ class SybaseConnection extends Connection {
             
             $arrQuery = $arrQuery[1];
             $arrTables = $arrTables[1];
-           
             $ind = 0;
             $numTables = count($arrTables);
             
             if($numTables == 1){
                 $table = $arrTables[0];
+            }else if($numTables == 0){
+                return $bindings;
             }
             
             foreach($arrQuery as $key=>$campos){
@@ -182,6 +183,7 @@ class SybaseConnection extends Connection {
                     $ind++;
                 }
             }
+            
             return $new_binds;
 	}
         /**
@@ -196,7 +198,6 @@ class SybaseConnection extends Connection {
         // Detalhes: http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
         private function compileNewQuery($query, $bindings)
         {
-            
             $bindings = $this->compileBindings($query, $bindings);
             
             $newQuery = ""; 
