@@ -144,13 +144,17 @@ class SybaseConnection extends Connection {
             $arrTables = $arrTables[1];
            
             $ind = 0;
-            if(count($arrTables) == 1){
+            $numTables = count($arrTables);
+            
+            if($numTables == 1){
                 $table = $arrTables[0];
             }
-                       
+            
             foreach($arrQuery as $key=>$campos){
-                if(in_array($campos, $arrTables) || (count($arrTables) == 1 && isset($table) && $key == 0)){
-                    if(count($arrTables) > 1){
+                $itsTable = in_array($campos, $arrTables);
+                
+                if($itsTable || ($numTables  == 1 && isset($table) && $key == 0)){
+                    if($numTables > 1){
                         $table = $campos;
                     }
                     if(!array_key_exists($table, $new_format)){
@@ -164,7 +168,7 @@ class SybaseConnection extends Connection {
                     }
                 }
                 
-                if(!in_array($campos, $arrTables)){
+                if(!$itsTable){
                     if(count($bindings)>$ind){
                         array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
                         if(in_array(strtolower($types[$table][$campos]['type']), $this->without_quotes)){
