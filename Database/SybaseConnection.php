@@ -103,15 +103,14 @@ class SybaseConnection extends Connection {
          */
         private function compileBindings($query, $bindings)
         {
-            if(count($bindings)<=0){
+            if(count($bindings)==0){
                 return [];
             }
             
             $bindings = $this->prepareBindings($bindings);
             $new_format = [];
             
-            $query_type = explode(' ', $query);
-            switch($query_type[0]){
+            switch(explode(' ', $query)[0]){
                 case "select":
                     preg_match_all("/(?:from |join )(?'tables'.*?)(?: (?:on(?:(?!join ).)*|)where(?'attributes'.*)| on|$)/i" ,$query, $matches);
                 break;
@@ -126,17 +125,20 @@ class SybaseConnection extends Connection {
                 break;
             }
             
-            $desQuery = array_intersect_key($matches, array_flip(array_filter(array_keys($matches), 'is_string')));
-            
-            if(is_array($desQuery['tables'])){
-                $desQuery['tables'] = implode($desQuery['tables'], ' ');
+
+            if(is_array($matches['tables'])){
+                $desQuery['tables'] = implode($matches['tables'], ' ');
+            }else if(isset($matches['tables'])){
+                $desQuery['tables'] = $matches['tables'];
             }
-            if(is_array($desQuery['attributes'])){
-                $desQuery['attributes'] = implode($desQuery['attributes'], ' ');
+            
+            if(is_array($matches['attributes'])){
+                $desQuery['attributes'] = implode($matches['attributes'], ' ');
+            }else if(isset($matches['attributes'])){
+                 $desQuery['attributes'] = $matches['attributes'];
             }
             
             unset($matches);
-            unset($query_type);
             preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
             preg_match_all("/\[([^\]]*)\]/", $desQuery['tables'], $arrTables);
             
@@ -145,31 +147,28 @@ class SybaseConnection extends Connection {
             $ind = 0;
             $numTables = count($arrTables);
             
-            if($numTables == 1){
-                $table = $arrTables[0];
-            }else if($numTables == 0){
+            if($numTables == 0){
                 return $bindings;
             }
             
-            foreach($arrQuery as $key=>$campos){
-                $itsTable = in_array($campos, $arrTables);
-                
-                if($itsTable || ($numTables  == 1 && isset($table) && $key == 0)){
-                    if($numTables > 1){
-                        $table = $campos;
+            foreach($arrTables as $tables){
+                $table = $tables;
+                    
+                if(!array_key_exists($table, $new_format)){
+                    $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$tables."'");
+                    $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED);
+                    foreach ($types[$tables] as &$row) {
+                            $types[$tables][$row['name']] = &$row;
                     }
-                    if(!array_key_exists($table, $new_format)){
-                        $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$table."'");
-                        $types[$table] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
-                        for($k = 0; $k < count($types[$table]); $k++){
-                            $types[$table][$types[$table][$k]['name']] = $types[$table][$k];
-                            unset($types[$table][$k]);
-                        }
-                        $new_format[$table] = [];
-                    }
+                    
+                   $new_format[$tables] = [];
                 }
-                
-                if(!$itsTable){
+            } 
+            
+            foreach($arrQuery as $campos){
+                if(in_array($campos, $arrTables)){
+                        if($campos!=$table) $table = $campos;
+                }else{
                     if(count($bindings)>$ind){
                         array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
                         if(in_array(strtolower($types[$table][$campos]['type']), $this->without_quotes)){
@@ -183,7 +182,6 @@ class SybaseConnection extends Connection {
                     $ind++;
                 }
             }
-            
             return $new_binds;
 	}
         /**
@@ -198,6 +196,7 @@ class SybaseConnection extends Connection {
         // Detalhes: http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
         private function compileNewQuery($query, $bindings)
         {
+            $time_start = microtime(true); 
             $bindings = $this->compileBindings($query, $bindings);
             
             $newQuery = ""; 
@@ -213,6 +212,7 @@ class SybaseConnection extends Connection {
                         }
                     }
             }
+            echo 'Total execution time in seconds: ' . (microtime(true) - $time_start).'<br>';
             return $newQuery;    
         }
         
