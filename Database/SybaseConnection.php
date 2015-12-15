@@ -103,6 +103,7 @@ class SybaseConnection extends Connection {
          */
         private function compileBindings($query, $bindings)
         {
+               var_dump($query);
             if(count($bindings)==0){
                 return [];
             }
@@ -113,6 +114,18 @@ class SybaseConnection extends Connection {
             switch(explode(' ', $query)[0]){
                 case "select":
                     preg_match_all("/(?:from |join )(?'tables'.*?)(?: (?:on(?:(?!join ).)*|)where(?'attributes'.*)| on|$)/i" ,$query, $matches);
+                    $selects = explode('from', $query)[0];
+                    $selects = explode(',', $selects);
+                    
+                    foreach($selects as $ind->$arrSelect){
+                        $arrSelects[$ind] = trim($arrSelect);
+                        if($arrSelect = '*'){
+                            break;
+                        }else{
+                            
+                        }
+                    }
+                    var_dump($selects);
                 break;
                 case "insert":
                     preg_match("/(?'tables'.*) \((?'attributes'.*)\) values/i" ,$query, $matches);
@@ -124,8 +137,6 @@ class SybaseConnection extends Connection {
                     preg_match("/(?'tables'.*) where (?'attributes'.*)/i" ,$query, $matches);
                 break;
             }
-            
-
             if(is_array($matches['tables'])){
                 $desQuery['tables'] = implode($matches['tables'], ' ');
             }else if(isset($matches['tables'])){
@@ -151,6 +162,7 @@ class SybaseConnection extends Connection {
                 return $bindings;
             }
             
+           
             foreach($arrTables as $tables){
                 $table = $tables;
                     
@@ -163,11 +175,17 @@ class SybaseConnection extends Connection {
                     
                    $new_format[$tables] = [];
                 }
-            } 
+            }
             
-            foreach($arrQuery as $campos){
-                if(in_array($campos, $arrTables)){
-                        if($campos!=$table) $table = $campos;
+            foreach($arrQuery as $key->$campos){
+                if(isset($arrQuery[$key-1]) && in_array($arrQuery[$key-1], $arrTables)){
+                    $table = $arrQuery[$key-1];
+                    continue;
+                }else{
+                    
+                }
+                if(in_array($campos, $arrTables)){ 
+                       if($campos!=$table) $table = $campos;
                 }else{
                     if(count($bindings)>$ind){
                         array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
@@ -213,7 +231,7 @@ class SybaseConnection extends Connection {
                     }
             }
             echo 'Total execution time in seconds: ' . (microtime(true) - $time_start).'<br>';
-            return $newQuery;    
+            return $newQuery;  
         }
         
         /**
