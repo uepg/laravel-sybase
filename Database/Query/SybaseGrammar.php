@@ -15,15 +15,23 @@ class SybaseGrammar extends Grammar {
 		'like', 'not like', 'between', 'ilike',
 		'&', '&=', '|', '|=', '^', '^=',
 	);
+        
+        protected $Builder;
+        public function getBuilder(){
+            return $this->Builder;
+        }
+        
 
-	/**
+        /**
 	 * Compile a select query into SQL.
 	 *
 	 * @param  \Illuminate\Database\Query\Builder
 	 * @return string
 	 */
+        
 	public function compileSelect(Builder $query)
 	{
+                $this->Builder = $query;
 		$components = $this->compileComponents($query);
 
 		// If an offset is present on the query, we will need to wrap the query in
