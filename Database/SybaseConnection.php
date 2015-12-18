@@ -1,5 +1,4 @@
 <?php namespace Uepg\LaravelSybase\Database;
-
 use Closure;
 use Exception;
 use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
@@ -8,7 +7,6 @@ use Uepg\LaravelSybase\Database\Query\SybaseGrammar as QueryGrammar;
 use Uepg\LaravelSybase\Database\Schema\SybaseGrammar as SchemaGrammar;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
-
 class SybaseConnection extends Connection {
                 
     
@@ -28,32 +26,25 @@ class SybaseConnection extends Connection {
 		{
 			return parent::transaction($callback);
 		}
-
 		$this->pdo->exec('BEGIN TRAN');
-
 		// We'll simply execute the given callback within a try / catch block
 		// and if we catch any exception we can rollback the transaction
 		// so that none of the changes are persisted to the database.
 		try
 		{
 			$result = $callback($this);
-
 			$this->pdo->exec('COMMIT TRAN');
 		}
-
 		// If we catch an exception, we will roll back so nothing gets messed
 		// up in the database. Then we'll re-throw the exception so it can
 		// be handled how the developer sees fit for their applications.
 		catch (Exception $e)
 		{
 			$this->pdo->exec('ROLLBACK TRAN');
-
 			throw $e;
 		}
-
 		return $result;
 	}
-
 	/**
 	 * Get the default query grammar instance.
 	 *
@@ -63,7 +54,6 @@ class SybaseConnection extends Connection {
 	{
 		return $this->withTablePrefix(new QueryGrammar);
 	}
-
 	/**
 	 * Get the default schema grammar instance.
 	 *
@@ -73,7 +63,6 @@ class SybaseConnection extends Connection {
 	{
 		return $this->withTablePrefix(new SchemaGrammar);
 	}
-
 	/**
 	 * Get the default post processor instance.
 	 *
@@ -83,7 +72,6 @@ class SybaseConnection extends Connection {
 	{
 		return new SqlServerProcessor;
 	}
-
 	/**
 	 * Get the Doctrine DBAL Driver.
 	 *
@@ -93,39 +81,50 @@ class SybaseConnection extends Connection {
 	{
 		return new DoctrineDriver;
 	}
-
         private function compileForSelect(Builder $builder, $bindings) {
             
             if(count($bindings)==0){
                 return [];
             }
-            
             $bindings = $this->prepareBindings($bindings);
-            
            
             $arrTables = [];
             array_push($arrTables, $builder->from);
             if(!empty($builder->joins)){
                 foreach($builder->joins as $join){
+                    
                     array_push($arrTables, $join->table);
                 }
             }
             $new_format = [];
             foreach($arrTables as $tables){
-
-                    $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$tables."'");
-                    $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED);
+                    preg_match("/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/", $tables, $alias);
+                    if(empty($alias['alias'])){
+                        $tables = $alias['tables'];
+                    }else{
+                        $tables = $alias['table'];
+                    }
                     
+                    $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$tables."'");
+                    $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED); 
+     
                     foreach ($types[$tables] as &$row) {
-                            $tipos[$row['name']] = $row['type'];
-                            $tipos[$tables.'.'.$row['name']] = $row['type'];
+                        $tipos[$row['name']] = $row['type'];
+                        $tipos[$tables.'.'.$row['name']] = $row['type'];
+                        if(!empty($alias['alias'])){
+                            $tipos[$alias['alias'].'.'.$row['name']] = $row['type'];
+                        }
                     }
                     
                    $new_format[$tables] = [];
-                
             }
             $wheres = (array)$builder->wheres;
             for($ind = 0; $ind < count($wheres); $ind++ ){
+                if(!isset($wheres[$ind]['value'])){
+                     $ind++;
+                     unset($wheres[$ind]);
+                     break;
+                }
                 
                 if(in_array(strtolower($tipos[$wheres[$ind]['column']]), $this->without_quotes)){
                     $new_binds[$ind] = $bindings[$ind]/1;
@@ -167,13 +166,9 @@ class SybaseConnection extends Connection {
                 case "delete":
                     preg_match("/(?'tables'.*) where (?'attributes'.*)/i" ,$query, $matches);
                 break;
-                default:
-                    return [];
             }
             
             $desQuery = array_intersect_key($matches, array_flip(array_filter(array_keys($matches), 'is_string')));
-            
-            
             
             if(is_array($desQuery['tables'])){
                 $desQuery['tables'] = implode($desQuery['tables'], ' ');
@@ -292,7 +287,6 @@ class SybaseConnection extends Connection {
                 return $this->getPdo()->query($this->compileNewQuery($query, $bindings));
             });
         }
-
         public function affectingStatement($query, $bindings = array())
         {   
             return $this->run($query, $bindings, function($me, $query, $bindings)
