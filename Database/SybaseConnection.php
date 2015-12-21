@@ -82,12 +82,9 @@ class SybaseConnection extends Connection {
 		return new DoctrineDriver;
 	}
         private function compileForSelect(Builder $builder, $bindings) {
-            
-            if(count($bindings)==0){
-                return [];
-            }
-            $bindings = $this->prepareBindings($bindings);
            
+            
+            
             $arrTables = [];
             array_push($arrTables, $builder->from);
             if(!empty($builder->joins)){
@@ -145,7 +142,6 @@ class SybaseConnection extends Connection {
          */
         private function compileBindings($query, $bindings)
         {
-             
            
             if(count($bindings)==0){
                 return [];
@@ -154,7 +150,7 @@ class SybaseConnection extends Connection {
             $bindings = $this->prepareBindings($bindings);
             $new_format = [];
             
-            switch(\explode(' ', $query)[0]){
+            switch(explode(' ', $query)[0]){
                 case "select":
                     return $this->compileForSelect($this->queryGrammar->getBuilder(), $bindings);
                 case "insert":
@@ -270,8 +266,33 @@ class SybaseConnection extends Connection {
 		return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
 		{
                     if ($me->pretending()) return array();
-                    return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());
-		});
+                    $offset = $this->queryGrammar->getBuilder()->offset;
+                    $limit = $this->queryGrammar->getBuilder()->limit;
+                    if($offset>0){
+                        if(!isset($limit)){
+                            $limit = 999999999999999999999999999;
+                        }
+                        $primarys = $this->getPdo()->query("SELECT index_col(object_name(i.id), i.indid, c.colid) AS primary_key
+FROM sysindexes i, syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('precos')")->fetchAll($me->getFetchMode());
+                        foreach($primarys as $primary)
+                        {
+                            $new_arr[] = $primary->primary_key.'+0 AS '.$primary->primary_key;
+                            $where_arr[] = "#tmpPaginate.".$primary->primary_key.' = #tmpTable.'.$primary->primary_key;
+                        }
+                        $res_primarys = implode(', ',$new_arr);
+                        $where_primarys = implode(' AND ',$where_arr);
+                        
+                        //Offset operation
+                        $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
+                        $this->getPdo()->query("SELECT ".$res_primarys.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
+                        return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primarys." WHERE #tmpTable.idTmp "
+                                . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
+                                ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
+                    }else{
+                        return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());
+                    }
+                        
+                });
 	}
         
         /** 
