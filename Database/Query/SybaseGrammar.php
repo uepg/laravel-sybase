@@ -34,13 +34,6 @@ class SybaseGrammar extends Grammar {
                 $this->Builder = $query;
 		$components = $this->compileComponents($query);
 
-		// If an offset is present on the query, we will need to wrap the query in
-		// a big "ANSI" offset syntax block. This is very nasty compared to the
-		// other database systems but is necessary for implementing features.
-		if ($query->offset > 0)
-		{
-                        abort(501, "Offset function still doesn't work with Sybase. :(");
-		}
 		return $this->concatenate($components);
 	}
 	/**
@@ -59,7 +52,7 @@ class SybaseGrammar extends Grammar {
 		// If there is a limit on the query, but not an offset, we will add the top
 		// clause to the query, which serves as a "limit" type clause within the
 		// SQL Server system similar to the limit keywords available in MySQL.
-		if ($query->limit > 0)//&& $query->offset <= 0)
+		if ($query->limit > 0 && $query->offset <= 0)
 		{
 			$select .= 'top '.$query->limit.' ';
 		}
@@ -87,49 +80,7 @@ class SybaseGrammar extends Grammar {
 
 		return $from;
 	}
-	/**
-	 * Compile the over statement for a table expression.
-	 *
-	 * @param  string  $orderings
-	 * @return string
-	 */
-	protected function compileOver($orderings)
-	{
-		return ", row_number() over ({$orderings}) as row_num";
-	}
-
-	/**
-	 * Compile the limit / offset row constraint for a query.
-	 *
-	 * @param  \Illuminate\Database\Query\Builder  $query
-	 * @return string
-	 */
-	protected function compileRowConstraint($query)
-	{
-		$start = $query->offset + 1;
-
-		if ($query->limit > 0)
-		{
-			$finish = $query->offset + $query->limit;
-
-			return "between {$start} and {$finish}";
-		}
-
-		return ">= {$start}";
-	}
-
-	/**
-	 * Compile a common table expression for a query.
-	 *
-	 * @param  string  $sql
-	 * @param  string  $constraint
-	 * @return string
-	 */
-	protected function compileTableExpression($sql, $constraint)
-	{
-		return "select * from ({$sql}) as temp_table where row_num {$constraint}";
-	}
-
+	
 	/**
 	 * Compile the "limit" portions of the query.
 	 *
