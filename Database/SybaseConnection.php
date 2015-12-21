@@ -268,24 +268,31 @@ class SybaseConnection extends Connection {
                     if ($me->pretending()) return array();
                     $offset = $this->queryGrammar->getBuilder()->offset;
                     $limit = $this->queryGrammar->getBuilder()->limit;
+                    $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];                    
                     if($offset>0){
                         if(!isset($limit)){
                             $limit = 999999999999999999999999999;
                         }
-                        $primarys = $this->getPdo()->query("SELECT index_col(object_name(i.id), i.indid, c.colid) AS primary_key
-FROM sysindexes i, syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('precos')")->fetchAll($me->getFetchMode());
-                        foreach($primarys as $primary)
-                        {
-                            $new_arr[] = $primary->primary_key.'+0 AS '.$primary->primary_key;
-                            $where_arr[] = "#tmpPaginate.".$primary->primary_key.' = #tmpTable.'.$primary->primary_key;
+                        $indentity = $this->getPdo()->query("select name as 'column' from syscolumns where status & 128 = 128 AND object_name(id)='".$from."'")->fetchAll($me->getFetchMode())[0];
+                        
+                        if(count($indentity) == 0){
+                            $primaries = $this->getPdo()->query("SELECT index_col(object_name(i.id), i.indid, c.colid) AS primary_key FROM sysindexes i, syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
+                            foreach($primaries as $primary)
+                            {
+                                $new_arr[] = $primary->primary_key.'+0 AS '.$primary->primary_key;
+                                $where_arr[] = "#tmpPaginate.".$primary->primary_key.' = #tmpTable.'.$primary->primary_key;
+                            }
+                            $res_primaries = implode(', ',$new_arr);
+                            $where_primaries = implode(' AND ',$where_arr);
+                        }else{
+                            $res_primaries = $indentity->column.'+0 AS '.$indentity->column;
+                            $where_primaries = "#tmpPaginate.".$indentity->column.' = #tmpTable.'.$indentity->column;
                         }
-                        $res_primarys = implode(', ',$new_arr);
-                        $where_primarys = implode(' AND ',$where_arr);
                         
                         //Offset operation
                         $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
-                        $this->getPdo()->query("SELECT ".$res_primarys.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
-                        return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primarys." WHERE #tmpTable.idTmp "
+                        $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
+                        return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
                                 . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
                                 ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
                     }else{
