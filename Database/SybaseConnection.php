@@ -116,17 +116,15 @@ class SybaseConnection extends Connection {
                    $new_format[$tables] = [];
             }
             $wheres = (array)$builder->wheres;
+            $i = 0;
             for($ind = 0; $ind < count($wheres); $ind++ ){
-                if(!isset($wheres[$ind]['value'])){
-                     $ind++;
-                     unset($wheres[$ind]);
-                     break;
-                }
-                
-                if(in_array(strtolower($tipos[$wheres[$ind]['column']]), $this->without_quotes)){
-                    $new_binds[$ind] = $bindings[$ind]/1;
-                }else{
-                    $new_binds[$ind] = (string)$bindings[$ind];
+                if(isset($wheres[$ind]['value'])){
+                    if(in_array(strtolower($tipos[$wheres[$ind]['column']]), $this->without_quotes)){
+                        $new_binds[$i] = $bindings[$i]/1;
+                    }else{
+                        $new_binds[$i] = (string)$bindings[$i];
+                    }
+                    $i++;
                 }
             }
             
