@@ -150,7 +150,12 @@ class SybaseConnection extends Connection {
             
             switch(explode(' ', $query)[0]){
                 case "select":
-                    return $this->compileForSelect($this->queryGrammar->getBuilder(), $bindings);
+                    $builder = $this->queryGrammar->getBuilder();
+                    if($builder != NULL && $builder->wheres != NULL){
+                        return $this->compileForSelect($builder, $bindings);
+                    }else{
+                        return $bindings;
+                    }
                 case "insert":
                     preg_match("/(?'tables'.*) \((?'attributes'.*)\) values/i" ,$query, $matches);
                 break;
@@ -264,9 +269,15 @@ class SybaseConnection extends Connection {
 		return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
 		{
                     if ($me->pretending()) return array();
-                    $offset = $this->queryGrammar->getBuilder()->offset;
-                    $limit = $this->queryGrammar->getBuilder()->limit;
-                    $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];                    
+                    
+                    if($this->queryGrammar->getBuilder() != NULL){
+
+                        $offset = $this->queryGrammar->getBuilder()->offset;
+                        $limit = $this->queryGrammar->getBuilder()->limit;
+                        $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];  
+                    }else{
+                        $offset = 0;
+                    }
                     if($offset>0){
                         if(!isset($limit)){
                             $limit = 999999999999999999999999999;
