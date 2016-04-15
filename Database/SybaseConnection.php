@@ -104,8 +104,8 @@ class SybaseConnection extends Connection {
                     
                     $explicitDB = explode('..', $tables);
                     if(isset($explicitDB[1])){
-                        $queryRes = $this->getPdo()->query("select b.name, c.name AS type from ".$explicitDB[0]."..sysobjects a noholdlock JOIN ".$explicitDB[0]."..syscolumns b noholdlock ON  a.id = b.id JOIN ".$explicitDB[0]."..systypes c noholdlock ON b.usertype = c.usertype and a.name = '".$explicitDB[1]."'");
-                    }else{
+                        $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM ".$explicitDB[0]."..syscolumns a noholdlock JOIN ".$explicitDB[0]."..systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id, db_id('".$explicitDB[0]."')) = '".$explicitDB[1]."'");
+                   }else{
                         $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$tables."'");
                     }
                     
@@ -185,7 +185,7 @@ class SybaseConnection extends Connection {
             unset($matches);
             unset($query_type);
             preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
-            preg_match_all("/\[([^\]]*)\]/", $desQuery['tables'], $arrTables);
+            preg_match_all("/\[([^\]]*)\]/", str_replace( "].[].[", '..' , $desQuery['tables']), $arrTables);
             
             $arrQuery = $arrQuery[1];
             $arrTables = $arrTables[1];
@@ -206,7 +206,12 @@ class SybaseConnection extends Connection {
                         $table = $campos;
                     }
                     if(!array_key_exists($table, $new_format)){
-                        $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$table."'");
+                        $explicitDB = explode('..', $table);
+                        if(isset($explicitDB[1])){
+                            $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM ".$explicitDB[0]."..syscolumns a noholdlock JOIN ".$explicitDB[0]."..systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id, db_id('".$explicitDB[0]."')) = '".$explicitDB[1]."'");
+                       }else{
+                            $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$table."'");
+                        }
                         $types[$table] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
                         for($k = 0; $k < count($types[$table]); $k++){
                             $types[$table][$types[$table][$k]['name']] = $types[$table][$k];
@@ -215,7 +220,7 @@ class SybaseConnection extends Connection {
                         $new_format[$table] = [];
                     }
                 }
-                
+                echo $table;
                 if(!$itsTable){
                     if(count($bindings)>$ind){
                         array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
