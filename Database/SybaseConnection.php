@@ -102,7 +102,13 @@ class SybaseConnection extends Connection {
                         $tables = $alias['table'];
                     }
                     
-                    $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$tables."'");
+                    $explicitDB = explode('..', $tables);
+                    if(isset($explicitDB[1])){
+                        $queryRes = $this->getPdo()->query("select b.name, c.name AS type from ".$explicitDB[0]."..sysobjects a noholdlock JOIN ".$explicitDB[0]."..syscolumns b noholdlock ON  a.id = b.id JOIN ".$explicitDB[0]."..systypes c noholdlock ON b.usertype = c.usertype and a.name = '".$explicitDB[1]."'");
+                    }else{
+                        $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$tables."'");
+                    }
+                    
                     $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED); 
      
                     foreach ($types[$tables] as &$row) {
@@ -253,32 +259,14 @@ class SybaseConnection extends Connection {
                         }
                     }
             }
+            $newQuery = str_replace( "[]", '' ,$newQuery);
             return $newQuery;  
         }
         
-        /**
-	 * Run a select statement against the database.
-	 *
-	 * @param  string  $query
-	 * @param  array  $bindings
-	 * @param  bool  $useReadPdo
-	 * @return array
-	*/
-	public function select($query, $bindings = array(), $useReadPdo = true)
-	{
-		return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
-		{
-                    if ($me->pretending()) return array();
-                    
-                    if($this->queryGrammar->getBuilder() != NULL){
-
-                        $offset = $this->queryGrammar->getBuilder()->offset;
+        public function compileOffset($me){
+           
                         $limit = $this->queryGrammar->getBuilder()->limit;
                         $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];  
-                    }else{
-                        $offset = 0;
-                    }
-                    if($offset>0){
                         if(!isset($limit)){
                             $limit = 999999999999999999999999999;
                         }
@@ -304,10 +292,33 @@ class SybaseConnection extends Connection {
                         return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
                                 . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
                                 ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
+                    
+        }
+        /**
+	 * Run a select statement against the database.
+	 *
+	 * @param  string  $query
+	 * @param  array  $bindings
+	 * @param  bool  $useReadPdo
+	 * @return array
+	*/
+	public function select($query, $bindings = array(), $useReadPdo = true)
+	{
+		return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
+		{
+                    if ($me->pretending()) return array();
+                    
+                    if($this->queryGrammar->getBuilder() != NULL){
+                        $offset = $this->queryGrammar->getBuilder()->offset;
                     }else{
-                        return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());
+                        $offset = 0;
                     }
-                        
+                    
+                    if($offset>0){
+                        return $this->compileOffset($me);
+                    }else{  
+                        return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());  
+                    }
                 });
 	}
         
