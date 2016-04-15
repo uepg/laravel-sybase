@@ -263,16 +263,20 @@ class SybaseConnection extends Connection {
             return $newQuery;  
         }
         
-        public function compileOffset($me){
+        public function compileOffset($offset, $query, $bindings = array(), $me){
            
                         $limit = $this->queryGrammar->getBuilder()->limit;
                         $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];  
                         if(!isset($limit)){
                             $limit = 999999999999999999999999999;
                         }
-                        $indentity = $this->getPdo()->query("select name as 'column' from syscolumns where status & 128 = 128 AND object_name(id)='".$from."'")->fetchAll($me->getFetchMode())[0];
-                        
-                        if(count($indentity) == 0){
+                        $explicitDB = explode('..', $from);
+                        if(isset($explicitDB[1])){
+                            $identity = $this->getPdo()->query("select b.name as 'column' from ".$explicitDB[0]."..syscolumns AS b INNER JOIN ".$explicitDB[0]."..sysobjects AS a ON a.id = b.id WHERE status & 128 = 128 AND a.name ='".$explicitDB[1]."'")->fetchAll($me->getFetchMode())[0];
+                        }else{
+                            $identity = $this->getPdo()->query("select name as 'column' from syscolumns where status & 128 = 128 AND object_name(id)='".$from."'")->fetchAll($me->getFetchMode())[0];
+                        }
+                        if(count($identity) == 0){
                             $primaries = $this->getPdo()->query("SELECT index_col(object_name(i.id), i.indid, c.colid) AS primary_key FROM sysindexes i, syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
                             foreach($primaries as $primary)
                             {
@@ -282,8 +286,8 @@ class SybaseConnection extends Connection {
                             $res_primaries = implode(', ',$new_arr);
                             $where_primaries = implode(' AND ',$where_arr);
                         }else{
-                            $res_primaries = $indentity->column.'+0 AS '.$indentity->column;
-                            $where_primaries = "#tmpPaginate.".$indentity->column.' = #tmpTable.'.$indentity->column;
+                            $res_primaries = $identity->column.'+0 AS '.$identity->column;
+                            $where_primaries = "#tmpPaginate.".$identity->column.' = #tmpTable.'.$identity->column;
                         }
                         
                         //Offset operation
@@ -315,7 +319,7 @@ class SybaseConnection extends Connection {
                     }
                     
                     if($offset>0){
-                        return $this->compileOffset($me);
+                        return $this->compileOffset($offset, $query, $bindings, $me);
                     }else{  
                         return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());  
                     }
