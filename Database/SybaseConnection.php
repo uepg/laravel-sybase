@@ -171,6 +171,9 @@ class SybaseConnection extends Connection {
                 case "delete":
                     preg_match("/(?'tables'.*) where (?'attributes'.*)/i" ,$query, $matches);
                 break;
+                default:
+                    return $bindings;
+                break;   
             }
             
             $desQuery = array_intersect_key($matches, array_flip(array_filter(array_keys($matches), 'is_string')));
