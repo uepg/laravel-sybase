@@ -285,7 +285,11 @@ class SybaseConnection extends Connection {
                             $identity = $this->getPdo()->query("select name as 'column' from syscolumns where status & 128 = 128 AND object_name(id)='".$from."'")->fetchAll($me->getFetchMode())[0];
                         }
                         if(count($identity) == 0){
-                            $primaries = $this->getPdo()->query("SELECT index_col(object_name(i.id), i.indid, c.colid) AS primary_key FROM sysindexes i, syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
+                            if(isset($explicitDB[1])){
+                              $primaries = $this->getPdo()->query("SELECT index_col(".$from.", i.indid, c.colid) AS primary_key FROM ".$explicitDB[0]."..sysindexes i, ".$explicitDB[0]."..syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
+                            }else{
+                              $primaries = $this->getPdo()->query("SELECT index_col(".$from.", i.indid, c.colid) AS primary_key FROM sysindexes i, syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
+                            }
                             foreach($primaries as $primary)
                             {
                                 $new_arr[] = $primary->primary_key.'+0 AS '.$primary->primary_key;
