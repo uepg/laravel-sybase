@@ -11,7 +11,7 @@ class SybaseConnection extends Connection {
                 
     
         // All types without quotes in Sybase's query
-        private $without_quotes = ['int' , 'numeric', 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit', 'binary', 'varbinary', 'timestamp'];
+        private $without_quotes = ['int' , 'numeric', 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit', 'binary', 'varbinary', 'timestamp', 'money'];
 	/**
 	 * Execute a Closure within a transaction.
 	 *
@@ -223,7 +223,6 @@ class SybaseConnection extends Connection {
                         $new_format[$table] = [];
                     }
                 }
-                echo $table;
                 if(!$itsTable){
                     if(count($bindings)>$ind){
                         array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
