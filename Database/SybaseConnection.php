@@ -126,7 +126,11 @@ class SybaseConnection extends Connection {
             for($ind = 0; $ind < count($wheres); $ind++ ){
                 if(isset($wheres[$ind]['value'])){
                     if(in_array(strtolower($tipos[$wheres[$ind]['column']]), $this->without_quotes)){
-                        $new_binds[$i] = $bindings[$i]/1;
+						if(!is_null($bindings[$i])){
+							$new_binds[$i] = $bindings[$i]/1;
+						}else{
+							$new_binds[$i] = null;
+						}
                     }else{
                         $new_binds[$i] = (string)$bindings[$i];
                     }
@@ -227,7 +231,11 @@ class SybaseConnection extends Connection {
                     if(count($bindings)>$ind){
                         array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
                         if(in_array(strtolower($types[$table][$campos]['type']), $this->without_quotes)){
-                            $new_binds[$ind] = $bindings[$ind]/1;
+                            if(!is_null($bindings[$i])){
+								$new_binds[$i] = $bindings[$i]/1;
+							}else{
+								$new_binds[$i] = null;
+							}
                         }else{
                             $new_binds[$ind] = (string)$bindings[$ind];
                         }
@@ -262,7 +270,12 @@ class SybaseConnection extends Connection {
                             $bindings[$i] = str_replace( "'", "''", $bindings[$i] );
                             $newQuery .= "'".$bindings[$i]."'";
                         }else{
-                            $newQuery .= $bindings[$i];
+							if(!is_null($bindings[$i])){
+								$newQuery .= $bindings[$i];
+							}else{
+								$newQuery .= 'null';
+							}
+                            
                         }
                     }
             }
