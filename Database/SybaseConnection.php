@@ -215,10 +215,10 @@ class SybaseConnection extends Connection {
                     if(!array_key_exists($table, $new_format)){
                         $explicitDB = explode('..', $table);
                         if(isset($explicitDB[1])){
-                            $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM ".$explicitDB[0]."..syscolumns a noholdlock JOIN ".$explicitDB[0]."..systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id, db_id('".$explicitDB[0]."')) = '".$explicitDB[1]."'");
-                       }else{
-                            $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$table."'");
-                        }
+                            $queryRes = $this->getPdo()->query("SELECT s0.name,(SELECT name FROM ".$explicitDB[0]."..systypes s2 noholdlock WHERE s2.usertype=(SELECT min( s3.usertype) FROM ".$explicitDB[0]."..systypes s3 noholdlock WHERE s3.hierarchy=s1.hierarchy)) AS type FROM ".$explicitDB[0]."..systypes s1 noholdlock, ".$explicitDB[0]."..syscolumns s0 noholdlock WHERE s0.usertype = s1.usertype AND object_name(s0.id, db_id('".$explicitDB[0]."')) = '".$explicitDB[1]."'");
+                        }else{
+                            $queryRes = $this->getPdo()->query("SELECT s0.name,(SELECT name FROM systypes s2 noholdlock WHERE s2.usertype=(SELECT min( s3.usertype) FROM systypes s3 noholdlock WHERE s3.hierarchy=s1.hierarchy)) AS type FROM systypes s1 noholdlock, syscolumns s0 noholdlock WHERE s0.usertype = s1.usertype AND object_name(s0.id) = '".$table."'");
+                         }
                         $types[$table] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
                         for($k = 0; $k < count($types[$table]); $k++){
                             $types[$table][$types[$table][$k]['name']] = $types[$table][$k];
@@ -280,6 +280,7 @@ class SybaseConnection extends Connection {
                     }
             }
             $newQuery = str_replace( "[]", '' ,$newQuery);
+            var_dump($newQuery);
             return $newQuery;  
         }
         
