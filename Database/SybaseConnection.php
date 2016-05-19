@@ -231,10 +231,10 @@ class SybaseConnection extends Connection {
                     if(count($bindings)>$ind){
                         array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
                         if(in_array(strtolower($types[$table][$campos]['type']), $this->without_quotes)){
-                            if(!is_null($bindings[$i])){
-								$new_binds[$i] = $bindings[$i]/1;
+                            if(!is_null($bindings[$ind])){
+								$new_binds[$ind] = $bindings[$ind]/1;
 							}else{
-								$new_binds[$i] = null;
+								$new_binds[$ind] = null;
 							}
                         }else{
                             $new_binds[$ind] = (string)$bindings[$ind];
