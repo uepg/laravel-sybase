@@ -124,10 +124,10 @@ class SybaseConnection extends Connection {
                     $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED); 
      
                     foreach ($types[$tables] as &$row) {
-                        $tipos[$row['name']] = $row['type'];
-                        $tipos[$tables.'.'.$row['name']] = $row['type'];
+                        $tipos[strtolower($row['name'])] = $row['type'];
+                        $tipos[strtolower($tables.'.'.$row['name'])] = $row['type'];
                         if(!empty($alias['alias'])){
-                            $tipos[$alias['alias'].'.'.$row['name']] = $row['type'];
+                            $tipos[strtolower($alias['alias'].'.'.$row['name'])] = $row['type'];
                         }
                     }
                     
@@ -137,7 +137,7 @@ class SybaseConnection extends Connection {
             $i = 0;
             for($ind = 0; $ind < count($wheres); $ind++ ){
                 if(isset($wheres[$ind]['value'])){
-                    if(in_array(strtolower($tipos[$wheres[$ind]['column']]), $this->without_quotes)){
+                    if(in_array(strtolower($tipos[strtolower($wheres[$ind]['column']])), $this->without_quotes)){
                         if(!is_null($bindings[$i])){
                                 $new_binds[$i] = $bindings[$i]/1;
                         }else{
