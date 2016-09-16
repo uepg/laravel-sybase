@@ -20,7 +20,7 @@ class SybaseConnection extends Connection {
 	 *
 	 * @throws \Exception
 	 */
-	public function transaction(Closure $callback)
+	public function transaction(Closure $callback, $attempts = 1)
 	{
 		if ($this->getDriverName() == 'sqlsrv')
 		{
@@ -372,7 +372,12 @@ class SybaseConnection extends Connection {
                 if($offset>0){
                     return $this->compileOffset($offset, $query, $bindings, $me);
                 }else{  
-                    return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());  
+                    $result = [];
+                    $statement = $this->getPdo()->query($this->compileNewQuery($query, $bindings));  
+                    do {
+                        $result+= $statement->fetchAll($me->getFetchMode());
+                    } while ($statement->nextRowset());
+                    return $result;
                 }
             });
 	}
