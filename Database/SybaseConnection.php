@@ -11,7 +11,7 @@ class SybaseConnection extends Connection {
                 
     
         // All types without quotes in Sybase's query
-        private $without_quotes = ['int' , 'numeric', 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit', 'binary', 'varbinary', 'timestamp'];
+        private $without_quotes = ['int' , 'numeric', 'bigint', 'integer' , 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit', 'binary', 'varbinary', 'timestamp', 'money'];
 	/**
 	 * Execute a Closure within a transaction.
 	 *
@@ -20,7 +20,7 @@ class SybaseConnection extends Connection {
 	 *
 	 * @throws \Exception
 	 */
-	public function transaction(Closure $callback)
+	public function transaction(Closure $callback, $attempts = 1)
 	{
 		if ($this->getDriverName() == 'sqlsrv')
 		{
@@ -82,14 +82,10 @@ class SybaseConnection extends Connection {
 		return new DoctrineDriver;
 	}
         private function compileForSelect(Builder $builder, $bindings) {
-           
-            
-            
             $arrTables = [];
             array_push($arrTables, $builder->from);
             if(!empty($builder->joins)){
                 foreach($builder->joins as $join){
-                    
                     array_push($arrTables, $join->table);
                 }
             }
@@ -104,18 +100,34 @@ class SybaseConnection extends Connection {
                     
                     $explicitDB = explode('..', $tables);
                     if(isset($explicitDB[1])){
-                        $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM ".$explicitDB[0]."..syscolumns a noholdlock JOIN ".$explicitDB[0]."..systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id, db_id('".$explicitDB[0]."')) = '".$explicitDB[1]."'");
-                   }else{
-                        $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$tables."'");
+                        $queryRes = $this->getPdo()->query("select a.name, 
+                                                            b.name AS customtype,
+                                                            st.name as type 
+                                                            FROM ".$explicitDB[0]."..syscolumns a, ".$explicitDB[0]."..systypes b, ".$explicitDB[0]."..systypes s, ".$explicitDB[0]."..systypes st
+                                                            WHERE a.usertype = b.usertype 
+                                                            AND s.usertype = a.usertype
+                                                            AND s.type = st.type
+                                                            AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
+                                                            AND st.usertype < 100 
+                                                            AND object_name(a.id, db_id('".$explicitDB[0]."')) = '".$explicitDB[1]."'");
+                    }else{
+                        $queryRes = $this->getPdo()->query("select a.name, st.name as type
+                                                            FROM syscolumns a, systypes  b, systypes s, systypes st
+                                                            WHERE a.usertype = b.usertype 
+                                                            AND s.usertype = a.usertype
+                                                            AND s.type = st.type
+                                                            AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
+                                                            AND st.usertype < 100 
+                                                            AND object_name(a.id) = '".$tables."'");
                     }
                     
                     $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED); 
      
                     foreach ($types[$tables] as &$row) {
-                        $tipos[$row['name']] = $row['type'];
-                        $tipos[$tables.'.'.$row['name']] = $row['type'];
+                        $tipos[strtolower($row['name'])] = $row['type'];
+                        $tipos[strtolower($tables.'.'.$row['name'])] = $row['type'];
                         if(!empty($alias['alias'])){
-                            $tipos[$alias['alias'].'.'.$row['name']] = $row['type'];
+                            $tipos[strtolower($alias['alias'].'.'.$row['name'])] = $row['type'];
                         }
                     }
                     
@@ -125,8 +137,12 @@ class SybaseConnection extends Connection {
             $i = 0;
             for($ind = 0; $ind < count($wheres); $ind++ ){
                 if(isset($wheres[$ind]['value'])){
-                    if(in_array(strtolower($tipos[$wheres[$ind]['column']]), $this->without_quotes)){
-                        $new_binds[$i] = $bindings[$i]/1;
+                    if(in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)){
+                        if(!is_null($bindings[$i])){
+                                $new_binds[$i] = $bindings[$i]/1;
+                        }else{
+                                $new_binds[$i] = null;
+                        }
                     }else{
                         $new_binds[$i] = (string)$bindings[$i];
                     }
@@ -211,9 +227,26 @@ class SybaseConnection extends Connection {
                     if(!array_key_exists($table, $new_format)){
                         $explicitDB = explode('..', $table);
                         if(isset($explicitDB[1])){
-                            $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM ".$explicitDB[0]."..syscolumns a noholdlock JOIN ".$explicitDB[0]."..systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id, db_id('".$explicitDB[0]."')) = '".$explicitDB[1]."'");
-                       }else{
-                            $queryRes = $this->getPdo()->query("select a.name, b.name AS type FROM syscolumns a noholdlock JOIN systypes b noholdlock ON a.usertype = b.usertype and object_name(a.id) = '".$table."'");
+                            $queryRes = $this->getPdo()->query("select a.name, 
+                                                                b.name AS customtype,
+                                                                st.name as type 
+                                                                FROM ".$explicitDB[0]."..syscolumns a, ".$explicitDB[0]."..systypes b, ".$explicitDB[0]."..systypes s, ".$explicitDB[0]."..systypes st
+                                                                WHERE a.usertype = b.usertype 
+                                                                AND s.usertype = a.usertype
+                                                                AND s.type = st.type
+                                                                AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
+                                                                AND st.usertype < 100 
+                                                                AND object_name(a.id, db_id('".$explicitDB[0]."')) = '".$explicitDB[1]."'");
+                           
+                        }else{
+                            $queryRes = $this->getPdo()->query("select a.name, st.name as type
+                                                                FROM syscolumns a, systypes  b, systypes s, systypes st
+                                                                WHERE a.usertype = b.usertype 
+                                                                AND s.usertype = a.usertype
+                                                                AND s.type = st.type
+                                                                AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
+                                                                AND st.usertype < 100 
+                                                                AND object_name(a.id) = '".$table."'");
                         }
                         $types[$table] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
                         for($k = 0; $k < count($types[$table]); $k++){
@@ -223,12 +256,15 @@ class SybaseConnection extends Connection {
                         $new_format[$table] = [];
                     }
                 }
-                echo $table;
                 if(!$itsTable){
                     if(count($bindings)>$ind){
                         array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
                         if(in_array(strtolower($types[$table][$campos]['type']), $this->without_quotes)){
-                            $new_binds[$ind] = $bindings[$ind]/1;
+                            if(!is_null($bindings[$ind])){
+                                    $new_binds[$ind] = $bindings[$ind]/1;
+                            }else{
+                                    $new_binds[$ind] = null;
+                            }
                         }else{
                             $new_binds[$ind] = (string)$bindings[$ind];
                         }
@@ -257,57 +293,60 @@ class SybaseConnection extends Connection {
             $bindings = $this->compileBindings($query, $bindings);
             $partQuery = explode("?", $query);
             for($i = 0; $i<count($partQuery); $i++){
-                    $newQuery .= $partQuery[$i];
-                    if($i<count($bindings)){
-                        if(is_string($bindings[$i])){
-                            $bindings[$i] = str_replace( "'", "''", $bindings[$i] );
-                            $newQuery .= "'".$bindings[$i]."'";
+                $newQuery .= $partQuery[$i];
+                if($i<count($bindings)){
+                    if(is_string($bindings[$i])){
+                        $bindings[$i] = str_replace( "'", "''", $bindings[$i] );
+                        $newQuery .= "'".$bindings[$i]."'";
+                    }else{
+                        if(!is_null($bindings[$i])){
+                                $newQuery .= $bindings[$i];
                         }else{
-                            $newQuery .= $bindings[$i];
+                                $newQuery .= 'null';
                         }
                     }
+                }
             }
             $newQuery = str_replace( "[]", '' ,$newQuery);
             return $newQuery;  
         }
         
         public function compileOffset($offset, $query, $bindings = array(), $me){
-           
-                        $limit = $this->queryGrammar->getBuilder()->limit;
-                        $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];  
-                        if(!isset($limit)){
-                            $limit = 999999999999999999999999999;
-                        }
-                        $explicitDB = explode('..', $from);
-                        if(isset($explicitDB[1])){
-                            $identity = $this->getPdo()->query("select b.name as 'column' from ".$explicitDB[0]."..syscolumns AS b INNER JOIN ".$explicitDB[0]."..sysobjects AS a ON a.id = b.id WHERE status & 128 = 128 AND a.name ='".$explicitDB[1]."'")->fetchAll($me->getFetchMode())[0];
-                        }else{
-                            $identity = $this->getPdo()->query("select name as 'column' from syscolumns where status & 128 = 128 AND object_name(id)='".$from."'")->fetchAll($me->getFetchMode())[0];
-                        }
-                        if(count($identity) == 0){
-                            if(isset($explicitDB[1])){
-                              $primaries = $this->getPdo()->query("SELECT index_col(".$from.", i.indid, c.colid) AS primary_key FROM ".$explicitDB[0]."..sysindexes i, ".$explicitDB[0]."..syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
-                            }else{
-                              $primaries = $this->getPdo()->query("SELECT index_col(".$from.", i.indid, c.colid) AS primary_key FROM sysindexes i, syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
-                            }
-                            foreach($primaries as $primary)
-                            {
-                                $new_arr[] = $primary->primary_key.'+0 AS '.$primary->primary_key;
-                                $where_arr[] = "#tmpPaginate.".$primary->primary_key.' = #tmpTable.'.$primary->primary_key;
-                            }
-                            $res_primaries = implode(', ',$new_arr);
-                            $where_primaries = implode(' AND ',$where_arr);
-                        }else{
-                            $res_primaries = $identity->column.'+0 AS '.$identity->column;
-                            $where_primaries = "#tmpPaginate.".$identity->column.' = #tmpTable.'.$identity->column;
-                        }
-                        
-                        //Offset operation
-                        $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
-                        $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
-                        return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
-                                . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
-                                ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
+            $limit = $this->queryGrammar->getBuilder()->limit;
+            $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];  
+            if(!isset($limit)){
+                $limit = 999999999999999999999999999;
+            }
+            $explicitDB = explode('..', $from);
+            if(isset($explicitDB[1])){
+                $identity = $this->getPdo()->query("select b.name as 'column' from ".$explicitDB[0]."..syscolumns AS b INNER JOIN ".$explicitDB[0]."..sysobjects AS a ON a.id = b.id WHERE status & 128 = 128 AND a.name ='".$explicitDB[1]."'")->fetchAll($me->getFetchMode())[0];
+            }else{
+                $identity = $this->getPdo()->query("select name as 'column' from syscolumns where status & 128 = 128 AND object_name(id)='".$from."'")->fetchAll($me->getFetchMode())[0];
+            }
+            if(count($identity) == 0){
+                if(isset($explicitDB[1])){
+                  $primaries = $this->getPdo()->query("SELECT index_col(".$from.", i.indid, c.colid) AS primary_key FROM ".$explicitDB[0]."..sysindexes i, ".$explicitDB[0]."..syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
+                }else{
+                  $primaries = $this->getPdo()->query("SELECT index_col(".$from.", i.indid, c.colid) AS primary_key FROM sysindexes i, syscolumns c WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')")->fetchAll($me->getFetchMode());
+                }
+                foreach($primaries as $primary)
+                {
+                    $new_arr[] = $primary->primary_key.'+0 AS '.$primary->primary_key;
+                    $where_arr[] = "#tmpPaginate.".$primary->primary_key.' = #tmpTable.'.$primary->primary_key;
+                }
+                $res_primaries = implode(', ',$new_arr);
+                $where_primaries = implode(' AND ',$where_arr);
+            }else{
+                $res_primaries = $identity->column.'+0 AS '.$identity->column;
+                $where_primaries = "#tmpPaginate.".$identity->column.' = #tmpTable.'.$identity->column;
+            }
+
+            //Offset operation
+            $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
+            $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
+            return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
+                    . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
+                    ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
                     
         }
         /**
@@ -320,22 +359,27 @@ class SybaseConnection extends Connection {
 	*/
 	public function select($query, $bindings = array(), $useReadPdo = true)
 	{
-		return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
-		{
-                    if ($me->pretending()) return array();
-                    
-                    if($this->queryGrammar->getBuilder() != NULL){
-                        $offset = $this->queryGrammar->getBuilder()->offset;
-                    }else{
-                        $offset = 0;
-                    }
-                    
-                    if($offset>0){
-                        return $this->compileOffset($offset, $query, $bindings, $me);
-                    }else{  
-                        return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->fetchAll($me->getFetchMode());  
-                    }
-                });
+            return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
+            {
+                if ($me->pretending()) return array();
+
+                if($this->queryGrammar->getBuilder() != NULL){
+                    $offset = $this->queryGrammar->getBuilder()->offset;
+                }else{
+                    $offset = 0;
+                }
+
+                if($offset>0){
+                    return $this->compileOffset($offset, $query, $bindings, $me);
+                }else{  
+                    $result = [];
+                    $statement = $this->getPdo()->query($this->compileNewQuery($query, $bindings));  
+                    do {
+                        $result+= $statement->fetchAll($me->getFetchMode());
+                    } while ($statement->nextRowset());
+                    return $result;
+                }
+            });
 	}
         
         /** 
