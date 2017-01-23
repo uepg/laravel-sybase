@@ -133,7 +133,18 @@ class SybaseConnection extends Connection {
                     
                    $new_format[$tables] = [];
             }
-            $wheres = (array)$builder->wheres;
+			$wheres = [];
+			foreach($builder->wheres as $w){
+				switch($w['type']){
+					case "Basic":
+					array_push($wheres, $w);
+					break;
+					case "Nested":
+					$wheres += $w['query']->wheres;
+					break;
+				}
+			}
+					var_dump($wheres);
             $i = 0;
             for($ind = 0; $ind < count($wheres); $ind++ ){
                 if(isset($wheres[$ind]['value'])){
