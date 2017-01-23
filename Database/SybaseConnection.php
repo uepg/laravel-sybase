@@ -144,7 +144,6 @@ class SybaseConnection extends Connection {
 					break;
 				}
 			}
-					var_dump($wheres);
             $i = 0;
             for($ind = 0; $ind < count($wheres); $ind++ ){
                 if(isset($wheres[$ind]['value'])){
