@@ -118,7 +118,6 @@ class SybaseConnection extends Connection {
             } else {
                 $tables = $alias['table'];
             }
-
             $queryString = $this->queryStringForSelect($tables);
             $queryRes = $this->getPdo()->query($queryString);
             $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED); 
@@ -128,6 +127,32 @@ class SybaseConnection extends Connection {
                 $tipos[strtolower($tables.'.'.$row['name'])] = $row['type'];
                 if (!empty($alias['alias'])) {
                     $tipos[strtolower($alias['alias'].'.'.$row['name'])] = $row['type'];
+				}
+			}
+			$wheres = [];
+			foreach($builder->wheres as $w){
+				switch($w['type']){
+					default:
+					array_push($wheres, $w);
+					break;
+					case "Nested":
+					$wheres += $w['query']->wheres;
+					break;
+				}
+			}
+            $i = 0;
+            for($ind = 0; $ind < count($wheres); $ind++ ){
+                if(isset($wheres[$ind]['value'])){
+                    if(in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)){
+                        if(!is_null($bindings[$i])){
+                                $new_binds[$i] = $bindings[$i]/1;
+                        }else{
+                                $new_binds[$i] = null;
+                        }
+                    }else{
+                        $new_binds[$i] = (string)$bindings[$i];
+                    }
+                    $i++;
                 }
             }
 
@@ -372,17 +397,15 @@ QUERY;
         } else {
             $res_primaries = $identity->column.'+0 AS '.$identity->column;
             $where_primaries = "#tmpPaginate.".$identity->column.' = #tmpTable.'.$identity->column;
+            //Offset operation
+            $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
+            $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
+            return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
+                    . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
+                    ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
+                    
         }
-
-        //Offset operation
-        $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
-        $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
-        return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
-                . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
-                ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
-
-    }
-
+	}   
     private function queryStringForIdentity($from)
     {
         $explicitDB = explode('..', $from);
@@ -425,13 +448,11 @@ QUERY;
             if ($me->pretending()) {
                 return array();
             }
-
             if ($this->queryGrammar->getBuilder() != NULL) {
                 $offset = $this->queryGrammar->getBuilder()->offset;
             } else {
                 $offset = 0;
             }
-
             if ($offset > 0) {
                 return $this->compileOffset($offset, $query, $bindings, $me);
             } else {  
@@ -444,6 +465,7 @@ QUERY;
             }
         });
     }
+
 
     /** 
      * @param  string  $query
