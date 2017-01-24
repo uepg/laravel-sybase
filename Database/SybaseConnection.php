@@ -136,7 +136,7 @@ class SybaseConnection extends Connection {
 			$wheres = [];
 			foreach($builder->wheres as $w){
 				switch($w['type']){
-					case "Basic":
+					default:
 					array_push($wheres, $w);
 					break;
 					case "Nested":
@@ -144,7 +144,6 @@ class SybaseConnection extends Connection {
 					break;
 				}
 			}
-					var_dump($wheres);
             $i = 0;
             for($ind = 0; $ind < count($wheres); $ind++ ){
                 if(isset($wheres[$ind]['value'])){
@@ -351,7 +350,6 @@ class SybaseConnection extends Connection {
                 $res_primaries = $identity->column.'+0 AS '.$identity->column;
                 $where_primaries = "#tmpPaginate.".$identity->column.' = #tmpTable.'.$identity->column;
             }
-
             //Offset operation
             $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
             $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
@@ -373,13 +371,11 @@ class SybaseConnection extends Connection {
             return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
             {
                 if ($me->pretending()) return array();
-
                 if($this->queryGrammar->getBuilder() != NULL){
                     $offset = $this->queryGrammar->getBuilder()->offset;
                 }else{
                     $offset = 0;
                 }
-
                 if($offset>0){
                     return $this->compileOffset($offset, $query, $bindings, $me);
                 }else{  
