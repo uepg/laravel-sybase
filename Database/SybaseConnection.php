@@ -118,6 +118,7 @@ class SybaseConnection extends Connection {
             } else {
                 $tables = $alias['table'];
             }
+<<<<<<< HEAD
 
             $queryString = $this->queryStringForSelect($tables);
             $queryRes = $this->getPdo()->query($queryString);
@@ -128,6 +129,32 @@ class SybaseConnection extends Connection {
                 $tipos[strtolower($tables.'.'.$row['name'])] = $row['type'];
                 if (!empty($alias['alias'])) {
                     $tipos[strtolower($alias['alias'].'.'.$row['name'])] = $row['type'];
+=======
+			$wheres = [];
+			foreach($builder->wheres as $w){
+				switch($w['type']){
+					default:
+					array_push($wheres, $w);
+					break;
+					case "Nested":
+					$wheres += $w['query']->wheres;
+					break;
+				}
+			}
+            $i = 0;
+            for($ind = 0; $ind < count($wheres); $ind++ ){
+                if(isset($wheres[$ind]['value'])){
+                    if(in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)){
+                        if(!is_null($bindings[$i])){
+                                $new_binds[$i] = $bindings[$i]/1;
+                        }else{
+                                $new_binds[$i] = null;
+                        }
+                    }else{
+                        $new_binds[$i] = (string)$bindings[$i];
+                    }
+                    $i++;
+>>>>>>> dev
                 }
             }
 
@@ -345,6 +372,7 @@ QUERY;
                     }
                 }
             }
+<<<<<<< HEAD
         }
         $newQuery = str_replace( "[]", '' ,$newQuery);
         return $newQuery;  
@@ -372,6 +400,59 @@ QUERY;
         } else {
             $res_primaries = $identity->column.'+0 AS '.$identity->column;
             $where_primaries = "#tmpPaginate.".$identity->column.' = #tmpTable.'.$identity->column;
+=======
+            //Offset operation
+            $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
+            $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
+            return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
+                    . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
+                    ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
+                    
+        }
+        /**
+	 * Run a select statement against the database.
+	 *
+	 * @param  string  $query
+	 * @param  array  $bindings
+	 * @param  bool  $useReadPdo
+	 * @return array
+	*/
+	public function select($query, $bindings = array(), $useReadPdo = true)
+	{
+            return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
+            {
+                if ($me->pretending()) return array();
+                if($this->queryGrammar->getBuilder() != NULL){
+                    $offset = $this->queryGrammar->getBuilder()->offset;
+                }else{
+                    $offset = 0;
+                }
+                if($offset>0){
+                    return $this->compileOffset($offset, $query, $bindings, $me);
+                }else{  
+                    $result = [];
+                    $statement = $this->getPdo()->query($this->compileNewQuery($query, $bindings));  
+                    do {
+                        $result+= $statement->fetchAll($me->getFetchMode());
+                    } while ($statement->nextRowset());
+                    return $result;
+                }
+            });
+	}
+        
+        /** 
+        * @param  string  $query
+        * @param  mixed array   $bindings
+        * @return bool
+        */
+        public function statement($query, $bindings = array()) {
+            
+            return $this->run($query, $bindings, function($me, $query, $bindings)
+            {
+                if ($me->pretending()) return true;
+                return $this->getPdo()->query($this->compileNewQuery($query, $bindings));
+            });
+>>>>>>> dev
         }
 
         //Offset operation
