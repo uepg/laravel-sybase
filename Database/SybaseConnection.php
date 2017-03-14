@@ -418,7 +418,8 @@ QUERY;
                     ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
 
         }
-	}
+    }
+
     private function queryStringForIdentity($from)
     {
         $explicitDB = explode('..', $from);
@@ -461,11 +462,13 @@ QUERY;
             if ($me->pretending()) {
                 return array();
             }
+
             if ($this->queryGrammar->getBuilder() != NULL) {
                 $offset = $this->queryGrammar->getBuilder()->offset;
             } else {
                 $offset = 0;
             }
+
             if ($offset > 0) {
                 return $this->compileOffset($offset, $query, $bindings, $me);
             } else {
