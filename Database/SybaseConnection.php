@@ -142,7 +142,7 @@ class SybaseConnection extends Connection {
 			}
             $i = 0;
             for($ind = 0; $ind < count($wheres); $ind++ ){
-                if(isset($wheres[$ind]['value'])){
+                if(isset($wheres[$ind]['value']) && isset($tipos[strtolower($wheres[$ind]['column'])])){
                     if(in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)){
                         if(!is_null($bindings[$i])){
                                 $new_binds[$i] = $bindings[$i]/1;
