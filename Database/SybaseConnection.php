@@ -120,58 +120,71 @@ class SybaseConnection extends Connection {
             }
             $queryString = $this->queryStringForSelect($tables);
             $queryRes = $this->getPdo()->query($queryString);
-            $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED); 
+            $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED);
 
             foreach ($types[$tables] as &$row) {
                 $tipos[strtolower($row['name'])] = $row['type'];
                 $tipos[strtolower($tables.'.'.$row['name'])] = $row['type'];
+
                 if (!empty($alias['alias'])) {
                     $tipos[strtolower($alias['alias'].'.'.$row['name'])] = $row['type'];
-				}
-			}
-			$wheres = [];
-			foreach($builder->wheres as $w){
-				switch($w['type']){
-					default:
-					array_push($wheres, $w);
-					break;
-					case "Nested":
-					$wheres += $w['query']->wheres;
-					break;
-				}
-			}
+                }
+            }
+
+            $wheres = [];
+
+            foreach($builder->wheres as $w){
+                switch($w['type']){
+                    default:
+                    array_push($wheres, $w);
+                    break;
+                    case "Nested":
+                    $wheres += $w['query']->wheres;
+                    break;
+                }
+            }
+
             $i = 0;
-            for($ind = 0; $ind < count($wheres); $ind++ ){
+            $wheresCount = count($wheres);
+
+            for($ind = 0; $ind < $wheresCount; $ind++ ){
                 if(isset($wheres[$ind]['value']) && isset($tipos[strtolower($wheres[$ind]['column'])])){
-                    if(in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)){
-                        if(!is_null($bindings[$i])){
+                    if (is_object($wheres[$ind]['value']) === false) {
+                        if(in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)){
+                            if(!is_null($bindings[$i])){
                                 $new_binds[$i] = $bindings[$i]/1;
-                        }else{
+                            }else{
                                 $new_binds[$i] = null;
+                            }
+                        }else{
+                            $new_binds[$i] = (string)$bindings[$i];
                         }
-                    }else{
-                        $new_binds[$i] = (string)$bindings[$i];
+                        $i++;
                     }
-                    $i++;
                 }
             }
 
             $new_format[$tables] = [];
         }
+
         $wheres = (array)$builder->wheres;
         $i = 0;
-        for ($ind = 0; $ind < count($wheres); $ind++ ) {
+        $wheresCount = count($wheres);
+
+        for ($ind = 0; $ind < $wheresCount; $ind++ ) {
             if (isset($wheres[$ind]['value'])) {
-                if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)) {
-                    if (!is_null($bindings[$i])) {
-                        $new_binds[$i] = $bindings[$i]/1;
+                if (is_object($wheres[$ind]['value']) === false) {
+                    if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)) {
+                        if (!is_null($bindings[$i])) {
+                            $new_binds[$i] = $bindings[$i]/1;
+                        } else {
+                            $new_binds[$i] = null;
+                        }
                     } else {
-                        $new_binds[$i] = null;
+                        $new_binds[$i] = (string)$bindings[$i];
                     }
-                } else {
-                    $new_binds[$i] = (string)$bindings[$i];
+                    $i++;
                 }
-                $i++;
             }
         }
 
@@ -185,24 +198,24 @@ class SybaseConnection extends Connection {
             return <<<QUERY
 select a.name,
 b.name AS customtype,
-st.name as type 
+st.name as type
 FROM {$explicitDB[0]}..syscolumns a, {$explicitDB[0]}..systypes b, {$explicitDB[0]}..systypes s, {$explicitDB[0]}..systypes st
-WHERE a.usertype = b.usertype 
+WHERE a.usertype = b.usertype
 AND s.usertype = a.usertype
 AND s.type = st.type
 AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-AND st.usertype < 100 
+AND st.usertype < 100
 AND object_name(a.id, db_id('{$explicitDB[0]}')) = '{$explicitDB[1]}'
 QUERY;
         } else {
             return <<<QUERY
 select a.name, st.name as type
 FROM syscolumns a, systypes  b, systypes s, systypes st
-WHERE a.usertype = b.usertype 
+WHERE a.usertype = b.usertype
 AND s.usertype = a.usertype
 AND s.type = st.type
 AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-AND st.usertype < 100 
+AND st.usertype < 100
 AND object_name(a.id) = '{$tables}'
 QUERY;
         }
@@ -210,7 +223,7 @@ QUERY;
 
     /**
      * Set new bindings with specified column types to Sybase
-     * 
+     *
      * @param  string  $query
      * @param  array   $bindings
      * @return mixed   $new_binds
@@ -243,7 +256,7 @@ QUERY;
                 break;
             default:
                 return $bindings;
-                break;   
+                break;
         }
 
         $desQuery = array_intersect_key($matches, array_flip(array_filter(array_keys($matches), 'is_string')));
@@ -316,26 +329,26 @@ QUERY;
         $explicitDB = explode('..', $table);
         if (isset($explicitDB[1])) {
             return <<<QUERY
-select a.name, 
+select a.name,
 b.name AS customtype,
-st.name as type 
+st.name as type
 FROM {$explicitDB[0]}..syscolumns a, {$explicitDB[0]}..systypes b, {$explicitDB[0]}..systypes s, {$explicitDB[0]}..systypes st
-WHERE a.usertype = b.usertype 
+WHERE a.usertype = b.usertype
 AND s.usertype = a.usertype
 AND s.type = st.type
 AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-AND st.usertype < 100 
+AND st.usertype < 100
 AND object_name(a.id, db_id('{$explicitDB[0]}')) = '{$explicitDB[1]}'
 QUERY;
         } else {
             return <<<QUERY
 select a.name, st.name as type
 FROM syscolumns a, systypes  b, systypes s, systypes st
-WHERE a.usertype = b.usertype 
+WHERE a.usertype = b.usertype
 AND s.usertype = a.usertype
 AND s.type = st.type
 AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-AND st.usertype < 100 
+AND st.usertype < 100
 AND object_name(a.id) = '{$table}'
 QUERY;
         }
@@ -343,7 +356,7 @@ QUERY;
 
     /**
      * Set new bindings with specified column types to Sybase
-     * 
+     *
      * @param  string  $query
      * @param  array  $bindings
      * @return string $query
@@ -353,7 +366,7 @@ QUERY;
     // Detalhes: http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
     private function compileNewQuery($query, $bindings)
     {
-        $newQuery = ""; 
+        $newQuery = "";
         $bindings = $this->compileBindings($query, $bindings);
         $partQuery = explode("?", $query);
         for ($i = 0; $i<count($partQuery); $i++) {
@@ -372,13 +385,13 @@ QUERY;
             }
         }
         $newQuery = str_replace( "[]", '' ,$newQuery);
-        return $newQuery;  
+        return $newQuery;
     }
 
     public function compileOffset($offset, $query, $bindings = array(), $me)
     {
         $limit = $this->queryGrammar->getBuilder()->limit;
-        $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];  
+        $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];
         if (!isset($limit)) {
             $limit = 999999999999999999999999999;
         }
@@ -401,11 +414,11 @@ QUERY;
             $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
             $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
             return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
-                    . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit) 
+                    . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit)
                     ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
-                    
+
         }
-	}   
+	}
     private function queryStringForIdentity($from)
     {
         $explicitDB = explode('..', $from);
@@ -432,7 +445,7 @@ QUERY;
                 WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')";
         }
     }
-    
+
     /**
      * Run a select statement against the database.
      *
@@ -455,9 +468,9 @@ QUERY;
             }
             if ($offset > 0) {
                 return $this->compileOffset($offset, $query, $bindings, $me);
-            } else {  
+            } else {
                 $result = [];
-                $statement = $this->getPdo()->query($this->compileNewQuery($query, $bindings));  
+                $statement = $this->getPdo()->query($this->compileNewQuery($query, $bindings));
                 do {
                     $result+= $statement->fetchAll($me->getFetchMode());
                 } while ($statement->nextRowset());
@@ -467,7 +480,7 @@ QUERY;
     }
 
 
-    /** 
+    /**
      * @param  string  $query
      * @param  mixed array   $bindings
      * @return bool
@@ -484,7 +497,7 @@ QUERY;
     }
 
     public function affectingStatement($query, $bindings = array())
-    {   
+    {
         return $this->run($query, $bindings, function($me, $query, $bindings)
         {
             if ($me->pretending()) {
