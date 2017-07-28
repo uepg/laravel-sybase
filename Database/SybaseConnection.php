@@ -503,9 +503,9 @@ QUERY;
 
     public function affectingStatement($query, $bindings = array())
     {
-        return $this->run($query, $bindings, function($me, $query, $bindings)
+        return $this->run($query, $bindings, function($query, $bindings)
         {
-            if ($me->pretending()) {
+            if ($this->pretending()) {
                 return 0;
             }
             return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->rowCount();
