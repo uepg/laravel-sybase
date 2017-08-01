@@ -457,9 +457,9 @@ QUERY;
     */
     public function select($query, $bindings = array(), $useReadPdo = true)
     {
-        return $this->run($query, $bindings, function($me, $query, $bindings) use ($useReadPdo)
+        return $this->run($query, $bindings, function($query, $bindings) use ($useReadPdo)
         {
-            if ($me->pretending()) {
+            if ($this->pretending()) {
                 return array();
             }
 
@@ -470,17 +470,19 @@ QUERY;
             }
 
             if ($offset > 0) {
-                return $this->compileOffset($offset, $query, $bindings, $me);
+                return $this->compileOffset($offset, $query, $bindings, $this);
             } else {
                 $result = [];
                 $statement = $this->getPdo()->query($this->compileNewQuery($query, $bindings));
                 do {
-                    $result+= $statement->fetchAll($me->getFetchMode());
+                    $result+= $statement->fetchAll($this->getFetchMode());
                 } while ($statement->nextRowset());
                 return $result;
             }
         });
     }
+
+    
 
 
     /**
@@ -490,9 +492,9 @@ QUERY;
      */
     public function statement($query, $bindings = array())
     {
-        return $this->run($query, $bindings, function($me, $query, $bindings)
+        return $this->run($query, $bindings, function($query, $bindings)
         {
-            if ($me->pretending()) {
+            if ($this->pretending()) {
                 return true;
             }
             return $this->getPdo()->query($this->compileNewQuery($query, $bindings));
@@ -501,12 +503,22 @@ QUERY;
 
     public function affectingStatement($query, $bindings = array())
     {
-        return $this->run($query, $bindings, function($me, $query, $bindings)
+        return $this->run($query, $bindings, function($query, $bindings)
         {
-            if ($me->pretending()) {
+            if ($this->pretending()) {
                 return 0;
             }
             return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->rowCount();
         });
+    }
+    
+    /**
+    * Get the default fetch mode for the connection.
+    *
+    * @return int
+    */
+    public function getFetchMode()
+    {
+        return $this->fetchMode;
     }
 }
