@@ -8,8 +8,15 @@ Sybase ASE based Eloquent module extension for Laravel 5.x.
 
 Add the following in the require section of your **composer.json**: 
 
+#### Laravel 5.1, 5.2, 5.3
+
 ```json
-"uepg/laravel-sybase": "1.*"
+"uepg/laravel-sybase": "~1.0"
+```
+#### Laravel 5.4
+
+```json
+"uepg/laravel-sybase": "~2.0"
 ```
 
 Update the package dependencies executing:
