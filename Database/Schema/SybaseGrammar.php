@@ -371,7 +371,10 @@ class SybaseGrammar extends Grammar {
 	 */
 	protected function typeDecimal(Fluent $column)
 	{
-		return "decimal({$column->total}, {$column->places})";
+	    if($column->places == 0)
+	        return "numeric({$column->total}, {$column->places})";
+	    else
+    		return "decimal({$column->total}, {$column->places})";
 	}
 
 	/**
