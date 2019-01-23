@@ -1,8 +1,10 @@
-<?php namespace Uepg\LaravelSybase\Database\Schema;
+<?php
+
+namespace Uepg\LaravelSybase\Database\Schema;
 
 use Illuminate\Database\Schema\Grammars\Grammar;
 use Illuminate\Support\Fluent;
-use Illuminate\Database\Schema\Blueprint;
+use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;
 
 class SybaseGrammar extends Grammar {
 
@@ -18,7 +20,7 @@ class SybaseGrammar extends Grammar {
 	 *
 	 * @var array
 	 */
-	protected $serials = array('bigInteger', 'integer');
+	protected $serials = array('bigInteger', 'integer', 'numeric');
 
 	/**
 	 * Compile the query to determine if a table exists.
@@ -371,8 +373,19 @@ class SybaseGrammar extends Grammar {
 	 */
 	protected function typeDecimal(Fluent $column)
 	{
-		return "decimal({$column->total}, {$column->places})";
+        return "decimal({$column->total}, {$column->places})";
 	}
+
+    /**
+     * Create the column definition for a numeric type.
+     *
+     * @param \Illuminate\Support\Fluent $column
+     * @return string
+     */
+    protected function typeNumeric(Fluent $column)
+    {
+        return "numeric({$column->total}, 0)";
+    }
 
 	/**
 	 * Create the column definition for a boolean type.

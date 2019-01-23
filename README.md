@@ -59,3 +59,24 @@ The file is usualy found in `/etc/freetds/freetds.conf`. Set the configuration a
     [global]
         # TDS protocol version
         tds version = 5.0
+
+### Setting to use numeric data type
+In the migration file you must replace include `use Illuminate\Database\Schema\Blueprint;` with include `use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;`
+
+Example:
+```php
+    use Illuminate\Database\Migrations\Migration;
+    //use Illuminate\Database\Schema\Blueprint;
+    use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;
+
+class CreateTable extends Migration
+{
+    public function up()
+    {
+        Schema::create('table_name', function (Blueprint $table) {
+            $table->numeric('column_name', length, autoIncrement);
+        });
+    }
+}
+
+```

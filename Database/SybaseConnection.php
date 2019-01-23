@@ -6,6 +6,7 @@ use Exception;
 use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Illuminate\Database\Query\Processors\SqlServerProcessor;
 use Uepg\LaravelSybase\Database\Query\SybaseGrammar as QueryGrammar;
+use Uepg\LaravelSybase\Database\Schema\BlueprintSybase;
 use Uepg\LaravelSybase\Database\Schema\SybaseGrammar as SchemaGrammar;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
@@ -520,5 +521,20 @@ QUERY;
     public function getFetchMode()
     {
         return $this->fetchMode;
+    }
+
+    /**
+     * @return \Illuminate\Database\Schema\Builder
+     */
+    public function getSchemaBuilder()
+    {
+        if (is_null($this->schemaGrammar)) {
+            $this->useDefaultSchemaGrammar();
+        }
+        $builder = new \Illuminate\Database\Schema\Builder($this);
+        $builder->blueprintResolver(function ($table, $callback) {
+            return new BlueprintSybase($table, $callback);
+        });
+        return $builder;
     }
 }
