@@ -29,7 +29,7 @@ class SybaseGrammar extends Grammar {
 	 */
 	public function compileTableExists()
 	{
-		return "select * from sysobjects where type = 'U' and name = ?";
+		return "select * from sysobjects where type = 'U' and name = '?'";
 	}
 
 	/**
