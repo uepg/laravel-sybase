@@ -1,19 +1,20 @@
 # laravel-sybase
+
 Sybase ASE based Eloquent module extension for Laravel 5.x.
-- Enables use of multiple kinds of fields.
-- Use default eloquent: works with odbc and dblib!
-- Migrations! (WIP - Work in Progress)
+* Enables use of multiple kinds of fields.
+* Use default eloquent: works with odbc and dblib!
+* Migrations! (WIP - Work in Progress)
 
-### Install
+## Install
 
-Add the following in the require section of your **composer.json**: 
+Add the following in the require section of your **composer.json**:
 
-#### Laravel 5.1, 5.2, 5.3
+### Laravel 5.1, 5.2, 5.3
 
 ```json
 "uepg/laravel-sybase": "~1.0"
 ```
-#### Laravel 5.4
+### Laravel 5.4, 5.5
 
 ```json
 "uepg/laravel-sybase": "~2.0"
@@ -25,20 +26,26 @@ Update the package dependencies executing:
 composer update
 ```
 
-Add the following entry to your providers array in **./config./app.php** file: 
+Add the following entry to your providers array in **config/app.php** file: 
 
 ```php
 Uepg\LaravelSybase\Database\SybaseServiceProvider::class
 ```
 
-Update your ./config./database.php's default driver with the settings for the **sqlsrv** or your custom odbc. See the following example:
+Update your **config/database.php's** default driver with the settings for the **sqlsrv** or your custom odbc. See the following example:
 
 ```php
+<?php
+
+...
+
+return [
+    ...
+
     'connections' => [
-        
         ...
 
-        'sybaseuepg-aluno' => [
+        'sqlsrv' => [
             'driver'   => 'sqlsrv',
             'host'     => env('DB_HOST', 'sybase.myserver.br:5000'),
             'database' => env('DB_DATABASE', 'mydatabase'),
@@ -47,36 +54,61 @@ Update your ./config./database.php's default driver with the settings for the **
             'charset'  => 'utf8',
             'prefix'   => '',
         ],
+
+        ...
+    ],
+
+    ...
+]
 ```
 
  
-### Configuration of freetds driver
+## Configuration of freetds driver
 
-In Linux systems the driver version must be set in `freetds.conf` file to the right use of charset pages.
+In Linux systems the driver version must be set in **freetds.conf** file to the right use of charset pages.
 
-The file is usualy found in `/etc/freetds/freetds.conf`. Set the configuration at global section as the following example:
+The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration at global section as the following example:
 
-    [global]
-        # TDS protocol version
-        tds version = 5.0
+```text
+[global]
+    # TDS protocol version
+    tds version = 5.0
+```
 
-### Setting to use numeric data type
-In the migration file you must replace include `use Illuminate\Database\Schema\Blueprint;` with include `use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;`
+## Setting to use numeric data type
 
-Example:
+In the migration file you must replace `use Illuminate\Database\Schema\Blueprint;` with `use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;`. See the following example:
+
 ```php
-    use Illuminate\Database\Migrations\Migration;
-    //use Illuminate\Database\Schema\Blueprint;
-    use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;
+<?php
+
+use Illuminate\Support\Facades\Schema;
+// use Illuminate\Database\Schema\Blueprint;
+use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 class CreateTable extends Migration
 {
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
     public function up()
     {
         Schema::create('table_name', function (Blueprint $table) {
             $table->numeric('column_name', length, autoIncrement);
         });
     }
-}
 
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('table_name');
+    }
+}
 ```
