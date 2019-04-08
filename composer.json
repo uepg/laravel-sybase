@@ -18,6 +18,8 @@
         "laravel/framework": "5.*"
     },
     "autoload": {
-        "psr-4": { "Uepg\\LaravelSybase\\Database\\": "/Database" }
+        "psr-4": {
+            "Uepg\\LaravelSybase\\Database\\": "Database/"
+        }
     }
 }

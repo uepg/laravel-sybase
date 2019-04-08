@@ -1,41 +1,42 @@
-<?php namespace Uepg\LaravelSybase\Database\Query;
+<?php
+
+namespace Uepg\LaravelSybase\Database\Query;
 
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar;
 
 class SybaseGrammar extends Grammar {
-
     /**
      * All of the available clause operators.
      *
      * @var array
      */
-        protected $operators = array(
+    protected $operators = [
         '=', '<', '>', '<=', '>=', '!<', '!>', '<>', '!=',
         'like', 'not like', 'between', 'ilike',
         '&', '&=', '|', '|=', '^', '^=',
-    );
-        
-        protected $Builder;
-        public function getBuilder(){
-            return $this->Builder;
-        }
-        
+    ];
 
-        /**
+    protected $Builder;
+
+    public function getBuilder(){
+        return $this->Builder;
+    }
+
+    /**
      * Compile a select query into SQL.
      *
      * @param  \Illuminate\Database\Query\Builder
      * @return string
      */
-        
     public function compileSelect(Builder $query)
     {
-                $this->Builder = $query;
+        $this->Builder = $query;
         $components = $this->compileComponents($query);
 
         return $this->concatenate($components);
     }
+
     /**
      * Compile the "select *" portion of the query.
      *
@@ -45,19 +46,20 @@ class SybaseGrammar extends Grammar {
      */
     protected function compileColumns(Builder $query, $columns)
     {
-        if ( ! is_null($query->aggregate)) return;
+        if (!is_null($query->aggregate)) {
+            return;
+        }
 
         $select = $query->distinct ? 'select distinct ' : 'select ';
 
         // If there is a limit on the query, but not an offset, we will add the top
         // clause to the query, which serves as a "limit" type clause within the
         // SQL Server system similar to the limit keywords available in MySQL.
-        if ($query->limit > 0 && $query->offset <= 0)
-        {
-            $select .= 'top '.$query->limit.' ';
+        if ($query->limit > 0 && $query->offset <= 0) {
+            $select .= 'top ' . $query->limit . ' ';
         }
 
-        return $select.$this->columnize($columns);
+        return $select . $this->columnize($columns);
     }
 
     /**
@@ -71,16 +73,17 @@ class SybaseGrammar extends Grammar {
     {
         $from = parent::compileFrom($query, $table);
 
-        if (is_string($query->lock)) return $from.' '.$query->lock;
+        if (is_string($query->lock)) {
+            return $from . ' ' . $query->lock;
+        }
 
-        if ( ! is_null($query->lock))
-        {
-            return $from.' with(rowlock,'.($query->lock ? 'updlock,' : '').'holdlock)';
+        if (!is_null($query->lock)) {
+            return $from . ' with(rowlock,' . ($query->lock ? 'updlock,' : '') . 'holdlock)';
         }
 
         return $from;
     }
-    
+
     /**
      * Compile the "limit" portions of the query.
      *
@@ -113,7 +116,9 @@ class SybaseGrammar extends Grammar {
      */
     public function compileTruncate(Builder $query)
     {
-        return array('truncate table '.$this->wrapTable($query->from) => array());
+        return [
+            'truncate table ' . $this->wrapTable($query->from) => array()
+        ];
     }
 
     /**
@@ -134,9 +139,10 @@ class SybaseGrammar extends Grammar {
      */
     protected function wrapValue($value)
     {
-        if ($value === '*') return $value;
+        if ($value === '*') {
+            return $value;
+        }
 
-        return '['.str_replace(']', ']]', $value).']';
+        return '[' . str_replace(']', ']]', $value) . ']';
     }
-
 }

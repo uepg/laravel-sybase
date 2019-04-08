@@ -7,20 +7,27 @@ use Illuminate\Support\Fluent;
 use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;
 
 class SybaseGrammar extends Grammar {
-
     /**
      * The possible column modifiers.
      *
      * @var array
      */
-    protected $modifiers = array('Increment', 'Nullable', 'Default');
+    protected $modifiers = [
+        'Increment',
+        'Nullable',
+        'Default'
+    ];
 
     /**
      * The columns available as serials.
      *
      * @var array
      */
-    protected $serials = array('bigInteger', 'integer', 'numeric');
+    protected $serials = [
+        'bigInteger',
+        'integer',
+        'numeric'
+    ];
 
     /**
      * Compile the query to determine if a table exists.
@@ -29,7 +36,7 @@ class SybaseGrammar extends Grammar {
      */
     public function compileTableExists()
     {
-        return "select * from sysobjects where type = 'U' and name = '?'";
+        return "SELECT * FROM sysobjects WHERE type = 'U' AND name = '?'";
     }
 
     /**
@@ -40,9 +47,18 @@ class SybaseGrammar extends Grammar {
      */
     public function compileColumnExists($table)
     {
-        return "select col.name from sys.columns as col
-                join sys.objects as obj on col.object_id = obj.object_id
-                where obj.type = 'U' and obj.name = '$table'";
+        return "
+            SELECT
+                col.name
+            FROM
+                sys.columns AS col
+            JOIN
+                sys.objects AS obj
+            ON
+                col.object_id = obj.object_id
+            WHERE
+                obj.type = 'U' AND
+                obj.name = '$table'";
     }
 
     /**
@@ -56,7 +72,9 @@ class SybaseGrammar extends Grammar {
     {
         $columns = implode(', ', $this->getColumns($blueprint));
 
-        return 'create table '.$this->wrapTable($blueprint)." ($columns)";
+        return 'CREATE TABLE ' . $this->wrapTable($blueprint) . " (
+            $columns
+        )";
     }
 
     /**
@@ -72,7 +90,7 @@ class SybaseGrammar extends Grammar {
 
         $columns = $this->getColumns($blueprint);
 
-        return 'alter table '.$table.' add '.implode(', ', $columns);
+        return 'ALTER TABLE ' . $table . ' ADD ' . implode(', ', $columns);
     }
 
     /**
@@ -88,7 +106,7 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        return "alter table {$table} add constraint {$command->index} primary key ({$columns})";
+        return "ALTER TABLE {$table} ADD CONSTRAINT {$command->index} PRIMARY KEY ({$columns})";
     }
 
     /**
@@ -104,7 +122,7 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        return "create unique index {$command->index} on {$table} ({$columns})";
+        return "CREATE UNIQUE INDEX {$command->index} ON {$table} ({$columns})";
     }
 
     /**
@@ -120,7 +138,7 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        return "create index {$command->index} on {$table} ({$columns})";
+        return "CREATE INDEX {$command->index} ON {$table} ({$columns})";
     }
 
     /**
@@ -132,7 +150,7 @@ class SybaseGrammar extends Grammar {
      */
     public function compileDrop(Blueprint $blueprint, Fluent $command)
     {
-        return 'drop table '.$this->wrapTable($blueprint);
+        return 'DROP TABLE ' . $this->wrapTable($blueprint);
     }
 
     /**
@@ -144,7 +162,15 @@ class SybaseGrammar extends Grammar {
      */
     public function compileDropIfExists(Blueprint $blueprint, Fluent $command)
     {
-        return 'if exists (select * from INFORMATION_SCHEMA.TABLES where TABLE_NAME = \''.$blueprint->getTable().'\') drop table '.$blueprint->getTable();
+        return "
+            IF EXISTS (
+                SELECT
+                    *
+                FROM
+                    INFORMATION_SCHEMA.TABLES
+                WHERE
+                    TABLE_NAME = '" . $blueprint->getTable() . "'
+            ) DROP TABLE " . $blueprint->getTable();
     }
 
     /**
@@ -160,7 +186,7 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        return 'alter table '.$table.' drop column '.implode(', ', $columns);
+        return 'ALTER TABLE ' . $table . ' DROP COLUMN ' . implode(', ', $columns);
     }
 
     /**
@@ -174,7 +200,7 @@ class SybaseGrammar extends Grammar {
     {
         $table = $this->wrapTable($blueprint);
 
-        return "alter table {$table} drop constraint {$command->index}";
+        return "ALTER TABLE {$table} DROP CONSTRAINT {$command->index}";
     }
 
     /**
@@ -188,7 +214,7 @@ class SybaseGrammar extends Grammar {
     {
         $table = $this->wrapTable($blueprint);
 
-        return "drop index {$command->index} on {$table}";
+        return "DROP INDEX {$command->index} ON {$table}";
     }
 
     /**
@@ -202,7 +228,7 @@ class SybaseGrammar extends Grammar {
     {
         $table = $this->wrapTable($blueprint);
 
-        return "drop index {$command->index} on {$table}";
+        return "DROP INDEX {$command->index} ON {$table}";
     }
 
     /**
@@ -216,7 +242,7 @@ class SybaseGrammar extends Grammar {
     {
         $table = $this->wrapTable($blueprint);
 
-        return "alter table {$table} drop constraint {$command->index}";
+        return "ALTER TABLE {$table} DROP CONSTRAINT {$command->index}";
     }
 
     /**
@@ -230,7 +256,7 @@ class SybaseGrammar extends Grammar {
     {
         $from = $this->wrapTable($blueprint);
 
-        return "sp_rename {$from}, ".$this->wrapTable($command->to);
+        return "sp_rename {$from}, " . $this->wrapTable($command->to);
     }
 
     /**
@@ -542,9 +568,8 @@ class SybaseGrammar extends Grammar {
      */
     protected function modifyDefault(Blueprint $blueprint, Fluent $column)
     {
-        if ( ! is_null($column->default))
-        {
-            return " default ".$this->getDefaultValue($column->default);
+        if (!is_null($column->default)) {
+            return " default " . $this->getDefaultValue($column->default);
         }
     }
 
@@ -557,10 +582,8 @@ class SybaseGrammar extends Grammar {
      */
     protected function modifyIncrement(Blueprint $blueprint, Fluent $column)
     {
-        if (in_array($column->type, $this->serials) && $column->autoIncrement)
-        {
+        if (in_array($column->type, $this->serials) && $column->autoIncrement) {
             return ' identity primary key';
         }
     }
-
 }
