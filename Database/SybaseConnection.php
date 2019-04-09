@@ -18,7 +18,7 @@ class SybaseConnection extends Connection {
      *
      * @var array
      */
-    private $without_quotes = [
+    private $withoutQuotes = [
         'int',
         'numeric',
         'bigint',
@@ -115,7 +115,7 @@ class SybaseConnection extends Connection {
                 array_push($arrTables, $join->table);
             }
         }
-        $new_format = [];
+        $newFormat = [];
         foreach ($arrTables as $tables) {
             preg_match("/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/", $tables, $alias);
             if (empty($alias['alias'])) {
@@ -155,21 +155,21 @@ class SybaseConnection extends Connection {
             for ($ind = 0; $ind < $wheresCount; $ind++) {
                 if (isset($wheres[$ind]['value']) && isset($tipos[strtolower($wheres[$ind]['column'])])) {
                     if (is_object($wheres[$ind]['value']) === false) {
-                        if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)) {
+                        if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->withoutQuotes)) {
                             if (!is_null($bindings[$i])) {
-                                $new_binds[$i] = $bindings[$i] / 1;
+                                $newBinds[$i] = $bindings[$i] / 1;
                             } else {
-                                $new_binds[$i] = null;
+                                $newBinds[$i] = null;
                             }
                         } else {
-                            $new_binds[$i] = (string) $bindings[$i];
+                            $newBinds[$i] = (string) $bindings[$i];
                         }
                         $i++;
                     }
                 }
             }
 
-            $new_format[$tables] = [];
+            $newFormat[$tables] = [];
         }
 
         $wheres = (array) $builder->wheres;
@@ -179,21 +179,21 @@ class SybaseConnection extends Connection {
         for ($ind = 0; $ind < $wheresCount; $ind++) {
             if (isset($wheres[$ind]['value'])) {
                 if (is_object($wheres[$ind]['value']) === false) {
-                    if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)) {
+                    if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->withoutQuotes)) {
                         if (!is_null($bindings[$i])) {
-                            $new_binds[$i] = $bindings[$i] / 1;
+                            $newBinds[$i] = $bindings[$i] / 1;
                         } else {
-                            $new_binds[$i] = null;
+                            $newBinds[$i] = null;
                         }
                     } else {
-                        $new_binds[$i] = (string) $bindings[$i];
+                        $newBinds[$i] = (string) $bindings[$i];
                     }
                     $i++;
                 }
             }
         }
 
-        return $new_binds;
+        return $newBinds;
     }
 
     private function queryStringForSelect($tables)
@@ -257,7 +257,7 @@ class SybaseConnection extends Connection {
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return mixed   $new_binds
+     * @return mixed   $newBinds
      */
     private function compileBindings($query, $bindings)
     {
@@ -266,7 +266,7 @@ class SybaseConnection extends Connection {
         }
 
         $bindings = $this->prepareBindings($bindings);
-        $new_format = [];
+        $newFormat = [];
 
         switch (explode(' ', $query)[0]) {
             case "select":
@@ -300,9 +300,9 @@ class SybaseConnection extends Connection {
         }
 
         unset($matches);
-        unset($query_type);
+        unset($queryType);
         preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
-        preg_match_all("/\[([^\]]*)\]/", str_replace( "].[].[", '..', $desQuery['tables']), $arrTables);
+        preg_match_all("/\[([^\]]*)\]/", str_replace("].[].[", '..', $desQuery['tables']), $arrTables);
 
         $arrQuery = $arrQuery[1];
         $arrTables = $arrTables[1];
@@ -322,37 +322,37 @@ class SybaseConnection extends Connection {
                 if ($numTables > 1) {
                     $table = $campos;
                 }
-                if (!array_key_exists($table, $new_format)) {
+                if (!array_key_exists($table, $newFormat)) {
                     $queryRes = $this->getPdo()->query($this->queryStringForCompileBindings($table));
                     $types[$table] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
                     for ($k = 0; $k < count($types[$table]); $k++) {
                         $types[$table][$types[$table][$k]['name']] = $types[$table][$k];
                         unset($types[$table][$k]);
                     }
-                    $new_format[$table] = [];
+                    $newFormat[$table] = [];
                 }
             }
 
             if (!$itsTable) {
                 if (count($bindings) > $ind) {
-                    array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
-                    if (in_array(strtolower($types[$table][$campos]['type']), $this->without_quotes)) {
+                    array_push($newFormat[$table], ['campo' => $campos, 'binding' => $ind]);
+                    if (in_array(strtolower($types[$table][$campos]['type']), $this->withoutQuotes)) {
                         if (!is_null($bindings[$ind])) {
-                            $new_binds[$ind] = $bindings[$ind] / 1;
+                            $newBinds[$ind] = $bindings[$ind] / 1;
                         } else {
-                            $new_binds[$ind] = null;
+                            $newBinds[$ind] = null;
                         }
                     } else {
-                        $new_binds[$ind] = (string) $bindings[$ind];
+                        $newBinds[$ind] = (string) $bindings[$ind];
                     }
                 } else {
-                    array_push($new_format[$table], ['campo' => $campos]);
+                    array_push($newFormat[$table], ['campo' => $campos]);
                 }
                 $ind++;
             }
         }
 
-        return $new_binds;
+        return $newBinds;
     }
 
     private function queryStringForCompileBindings($table)
@@ -459,19 +459,19 @@ class SybaseConnection extends Connection {
             $queryString = $this->queryStringForPrimaries($from);
             $primaries = $this->getPdo()->query($queryString)->fetchAll($me->getFetchMode());
             foreach ($primaries as $primary) {
-                $new_arr[] = $primary->primary_key . '+0 AS ' . $primary->primary_key;
-                $where_arr[] = "#tmpPaginate." . $primary->primary_key . ' = #tmpTable.' . $primary->primary_key;
+                $newArr[] = $primary->primary_key . '+0 AS ' . $primary->primary_key;
+                $whereArr[] = "#tmpPaginate." . $primary->primary_key . ' = #tmpTable.' . $primary->primary_key;
             }
-            $res_primaries = implode(', ', $new_arr);
-            $where_primaries = implode(' AND ', $where_arr);
+            $resPrimaries = implode(', ', $newArr);
+            $wherePrimaries = implode(' AND ', $whereArr);
         } else {
-            $res_primaries = $identity->column . '+0 AS ' . $identity->column;
-            $where_primaries = "#tmpPaginate." . $identity->column . ' = #tmpTable.' . $identity->column;
+            $resPrimaries = $identity->column . '+0 AS ' . $identity->column;
+            $wherePrimaries = "#tmpPaginate." . $identity->column . ' = #tmpTable.' . $identity->column;
             // Offset operation
             $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
             $this->getPdo()->query("
                 SELECT
-                    " . $res_primaries . ",
+                    " . $resPrimaries . ",
                     idTmp=identity(18)
                 INTO
                     #tmpTable
@@ -486,7 +486,7 @@ class SybaseConnection extends Connection {
                 INNER JOIN
                     #tmpPaginate
                 ON
-                    " . $where_primaries . "
+                    " . $wherePrimaries . "
                 WHERE
                     #tmpTable.idTmp BETWEEN " . ($offset + 1) . " AND
                     " . ($offset + $limit) . "

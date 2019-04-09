@@ -17,10 +17,10 @@ class SybaseGrammar extends Grammar {
         '&', '&=', '|', '|=', '^', '^=',
     ];
 
-    protected $Builder;
+    protected $builder;
 
     public function getBuilder(){
-        return $this->Builder;
+        return $this->builder;
     }
 
     /**
@@ -31,7 +31,7 @@ class SybaseGrammar extends Grammar {
      */
     public function compileSelect(Builder $query)
     {
-        $this->Builder = $query;
+        $this->builder = $query;
         $components = $this->compileComponents($query);
 
         return $this->concatenate($components);
