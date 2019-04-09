@@ -117,7 +117,11 @@ class SybaseConnection extends Connection {
         }
         $newFormat = [];
         foreach ($arrTables as $tables) {
-            preg_match("/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/", $tables, $alias);
+            preg_match(
+                "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
+                $tables,
+                $alias
+            );
             if (empty($alias['alias'])) {
                 $tables = $alias['tables'];
             } else {
@@ -132,7 +136,9 @@ class SybaseConnection extends Connection {
                 $tipos[strtolower($tables . '.' . $row['name'])] = $row['type'];
 
                 if (!empty($alias['alias'])) {
-                    $tipos[strtolower($alias['alias'] . '.' . $row['name'])] = $row['type'];
+                    $tipos[
+                        strtolower($alias['alias'] . '.' . $row['name'])
+                    ] = $row['type'];
                 }
             }
 
@@ -153,9 +159,19 @@ class SybaseConnection extends Connection {
             $wheresCount = count($wheres);
 
             for ($ind = 0; $ind < $wheresCount; $ind++) {
-                if (isset($wheres[$ind]['value']) && isset($tipos[strtolower($wheres[$ind]['column'])])) {
+                if (
+                    isset($wheres[$ind]['value']) &&
+                    isset($tipos[strtolower($wheres[$ind]['column'])])
+                ) {
                     if (is_object($wheres[$ind]['value']) === false) {
-                        if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->withoutQuotes)) {
+                        if (
+                            in_array(
+                                strtolower($tipos[
+                                    strtolower($wheres[$ind]['column'])
+                                ]),
+                                $this->withoutQuotes
+                            )
+                        ) {
                             if (!is_null($bindings[$i])) {
                                 $newBinds[$i] = $bindings[$i] / 1;
                             } else {
@@ -179,7 +195,14 @@ class SybaseConnection extends Connection {
         for ($ind = 0; $ind < $wheresCount; $ind++) {
             if (isset($wheres[$ind]['value'])) {
                 if (is_object($wheres[$ind]['value']) === false) {
-                    if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->withoutQuotes)) {
+                    if (
+                        in_array(
+                            strtolower($tipos[
+                                strtolower($wheres[$ind]['column'])
+                            ]),
+                            $this->withoutQuotes
+                        )
+                    ) {
                         if (!is_null($bindings[$i])) {
                             $newBinds[$i] = $bindings[$i] / 1;
                         } else {
@@ -277,20 +300,35 @@ class SybaseConnection extends Connection {
                     return $bindings;
                 }
             case "insert":
-                preg_match("/(?'tables'.*) \((?'attributes'.*)\) values/i", $query, $matches);
+                preg_match(
+                    "/(?'tables'.*) \((?'attributes'.*)\) values/i",
+                    $query,
+                    $matches
+                );
                 break;
             case "update":
-                preg_match("/(?'tables'.*) set (?'attributes'.*)/i", $query, $matches);
+                preg_match(
+                    "/(?'tables'.*) set (?'attributes'.*)/i",
+                    $query,
+                    $matches
+                );
                 break;
             case "delete":
-                preg_match("/(?'tables'.*) where (?'attributes'.*)/i", $query, $matches);
+                preg_match(
+                    "/(?'tables'.*) where (?'attributes'.*)/i",
+                    $query,
+                    $matches
+                );
                 break;
             default:
                 return $bindings;
                 break;
         }
 
-        $desQuery = array_intersect_key($matches, array_flip(array_filter(array_keys($matches), 'is_string')));
+        $desQuery = array_intersect_key(
+            $matches,
+            array_flip(array_filter(array_keys($matches), 'is_string'))
+        );
 
         if (is_array($desQuery['tables'])) {
             $desQuery['tables'] = implode($desQuery['tables'], ' ');
@@ -302,7 +340,11 @@ class SybaseConnection extends Connection {
         unset($matches);
         unset($queryType);
         preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
-        preg_match_all("/\[([^\]]*)\]/", str_replace("].[].[", '..', $desQuery['tables']), $arrTables);
+        preg_match_all(
+            "/\[([^\]]*)\]/",
+            str_replace("].[].[", '..', $desQuery['tables']),
+            $arrTables
+        );
 
         $arrQuery = $arrQuery[1];
         $arrTables = $arrTables[1];
@@ -323,10 +365,14 @@ class SybaseConnection extends Connection {
                     $table = $campos;
                 }
                 if (!array_key_exists($table, $newFormat)) {
-                    $queryRes = $this->getPdo()->query($this->queryStringForCompileBindings($table));
+                    $queryRes = $this->getPdo()->query(
+                        $this->queryStringForCompileBindings($table)
+                    );
                     $types[$table] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
                     for ($k = 0; $k < count($types[$table]); $k++) {
-                        $types[$table][$types[$table][$k]['name']] = $types[$table][$k];
+                        $types[$table][
+                            $types[$table][$k]['name']
+                        ] = $types[$table][$k];
                         unset($types[$table][$k]);
                     }
                     $newFormat[$table] = [];
@@ -335,8 +381,18 @@ class SybaseConnection extends Connection {
 
             if (!$itsTable) {
                 if (count($bindings) > $ind) {
-                    array_push($newFormat[$table], ['campo' => $campos, 'binding' => $ind]);
-                    if (in_array(strtolower($types[$table][$campos]['type']), $this->withoutQuotes)) {
+                    array_push(
+                        $newFormat[$table], [
+                            'campo' => $campos,
+                            'binding' => $ind
+                        ]
+                    );
+                    if (
+                        in_array(
+                            strtolower($types[$table][$campos]['type']),
+                            $this->withoutQuotes
+                        )
+                    ) {
                         if (!is_null($bindings[$ind])) {
                             $newBinds[$ind] = $bindings[$ind] / 1;
                         } else {
@@ -413,9 +469,11 @@ class SybaseConnection extends Connection {
 
     /**
      * Set new bindings with specified column types to Sybase.
-     * Poderia compilar novamente dos bindings usando os PDO::PARAM, porém, não tem nenhuma constante que lide
-     * com decimais, logo, a única maneira seria colocando PDO::PARAM_STR, que colocaria plicas.
-     * Detalhes: http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
+     * Poderia compilar novamente dos bindings usando os PDO::PARAM, porém,
+     * não tem nenhuma constante que lide com decimais, logo, a única maneira
+     * seria colocando PDO::PARAM_STR, que colocaria plicas.
+     * Detalhes:
+     * http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
      *
      * @param  string  $query
      * @param  array  $bindings
@@ -453,22 +511,33 @@ class SybaseConnection extends Connection {
             $limit = 999999999999999999999999999;
         }
         $queryString = $this->queryStringForIdentity($from);
-        $identity = $this->getPdo()->query($queryString)->fetchAll($me->getFetchMode())[0];
+        $identity = $this->getPdo()->query($queryString)->fetchAll(
+            $me->getFetchMode()
+        )[0];
 
         if (count($identity) === 0) {
             $queryString = $this->queryStringForPrimaries($from);
-            $primaries = $this->getPdo()->query($queryString)->fetchAll($me->getFetchMode());
+            $primaries = $this->getPdo()->query($queryString)->fetchAll(
+                $me->getFetchMode()
+            );
             foreach ($primaries as $primary) {
-                $newArr[] = $primary->primary_key . '+0 AS ' . $primary->primary_key;
-                $whereArr[] = "#tmpPaginate." . $primary->primary_key . ' = #tmpTable.' . $primary->primary_key;
+                $newArr[] = $primary->primary_key . '+0 AS ' .
+                    $primary->primary_key;
+                $whereArr[] = "#tmpPaginate." . $primary->primary_key .
+                    ' = #tmpTable.' . $primary->primary_key;
             }
             $resPrimaries = implode(', ', $newArr);
             $wherePrimaries = implode(' AND ', $whereArr);
         } else {
             $resPrimaries = $identity->column . '+0 AS ' . $identity->column;
-            $wherePrimaries = "#tmpPaginate." . $identity->column . ' = #tmpTable.' . $identity->column;
+            $wherePrimaries = "#tmpPaginate." . $identity->column .
+                ' = #tmpTable.' . $identity->column;
             // Offset operation
-            $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
+            $this->getPdo()->query(str_replace(
+                " from ",
+                " into #tmpPaginate from ",
+                $this->compileNewQuery($query, $bindings)
+            ));
             $this->getPdo()->query("
                 SELECT
                     " . $resPrimaries . ",
@@ -569,7 +638,10 @@ class SybaseConnection extends Connection {
     */
     public function select($query, $bindings = array(), $useReadPdo = true)
     {
-        return $this->run($query, $bindings, function ($query, $bindings) use ($useReadPdo) {
+        return $this->run($query, $bindings, function (
+            $query,
+            $bindings
+        ) use ($useReadPdo) {
             if ($this->pretending()) {
                 return [];
             }
@@ -584,7 +656,10 @@ class SybaseConnection extends Connection {
                 return $this->compileOffset($offset, $query, $bindings, $this);
             } else {
                 $result = [];
-                $statement = $this->getPdo()->query($this->compileNewQuery($query, $bindings));
+                $statement = $this->getPdo()->query($this->compileNewQuery(
+                    $query,
+                    $bindings
+                ));
                 do {
                     $result += $statement->fetchAll($this->getFetchMode());
                 } while ($statement->nextRowset());
@@ -604,7 +679,10 @@ class SybaseConnection extends Connection {
             if ($this->pretending()) {
                 return true;
             }
-            return $this->getPdo()->query($this->compileNewQuery($query, $bindings));
+            return $this->getPdo()->query($this->compileNewQuery(
+                $query,
+                $bindings
+            ));
         });
     }
 
@@ -614,7 +692,10 @@ class SybaseConnection extends Connection {
             if ($this->pretending()) {
                 return 0;
             }
-            return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->rowCount();
+            return $this->getPdo()->query($this->compileNewQuery(
+                $query,
+                $bindings
+            ))->rowCount();
         });
     }
 

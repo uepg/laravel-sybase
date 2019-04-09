@@ -106,7 +106,10 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        return "ALTER TABLE {$table} ADD CONSTRAINT {$command->index} PRIMARY KEY ({$columns})";
+        return "
+            ALTER TABLE {$table}
+            ADD CONSTRAINT {$command->index}
+            PRIMARY KEY ({$columns})";
     }
 
     /**
@@ -186,7 +189,8 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        return 'ALTER TABLE ' . $table . ' DROP COLUMN ' . implode(', ', $columns);
+        return 'ALTER TABLE ' . $table .
+            ' DROP COLUMN ' . implode(', ', $columns);
     }
 
     /**
@@ -582,7 +586,10 @@ class SybaseGrammar extends Grammar {
      */
     protected function modifyIncrement(Blueprint $blueprint, Fluent $column)
     {
-        if (in_array($column->type, $this->serials) && $column->autoIncrement) {
+        if (
+            in_array($column->type, $this->serials) &&
+            $column->autoIncrement
+        ) {
             return ' identity primary key';
         }
     }
