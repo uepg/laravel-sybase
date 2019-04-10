@@ -6,8 +6,15 @@ use Illuminate\Database\Schema\Blueprint;
 
 class BlueprintSybase extends Blueprint
 {
-    public function numeric($column, $total=8, $autoIncrement=false)
+    public function numeric($column, $total = 8, $autoIncrement = false)
     {
-        return $this->addColumn('numeric', $column, compact('total', 'autoIncrement'));
+        return $this->addColumn(
+            'numeric',
+            $column,
+            compact(
+                'total',
+                'autoIncrement'
+            )
+        );
     }
 }

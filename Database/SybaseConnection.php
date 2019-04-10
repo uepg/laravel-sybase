@@ -1,4 +1,5 @@
 <?php
+
 namespace Uepg\LaravelSybase\Database;
 
 use Closure;
@@ -12,9 +13,12 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Query\Builder;
 
 class SybaseConnection extends Connection {
-
-    // All types without quotes in Sybase's query
-    private $without_quotes = [
+    /**
+     * All types without quotes in Sybase's query.
+     *
+     * @var array
+     */
+    private $withoutQuotes = [
         'int',
         'numeric',
         'bigint',
@@ -111,10 +115,14 @@ class SybaseConnection extends Connection {
                 array_push($arrTables, $join->table);
             }
         }
-        $new_format = [];
+        $newFormat = [];
         foreach ($arrTables as $tables) {
-            preg_match("/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/", $tables, $alias);
-            if (empty($alias['alias'])){
+            preg_match(
+                "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
+                $tables,
+                $alias
+            );
+            if (empty($alias['alias'])) {
                 $tables = $alias['tables'];
             } else {
                 $tables = $alias['table'];
@@ -125,109 +133,154 @@ class SybaseConnection extends Connection {
 
             foreach ($types[$tables] as &$row) {
                 $tipos[strtolower($row['name'])] = $row['type'];
-                $tipos[strtolower($tables.'.'.$row['name'])] = $row['type'];
+                $tipos[strtolower($tables . '.' . $row['name'])] = $row['type'];
 
                 if (!empty($alias['alias'])) {
-                    $tipos[strtolower($alias['alias'].'.'.$row['name'])] = $row['type'];
+                    $tipos[
+                        strtolower($alias['alias'] . '.' . $row['name'])
+                    ] = $row['type'];
                 }
             }
 
             $wheres = [];
 
-            foreach($builder->wheres as $w){
-                switch($w['type']){
-                    default:
-                    array_push($wheres, $w);
-                    break;
+            foreach ($builder->wheres as $w) {
+                switch ($w['type']) {
                     case "Nested":
-                    $wheres += $w['query']->wheres;
-                    break;
+                        $wheres += $w['query']->wheres;
+                        break;
+                    default:
+                        array_push($wheres, $w);
+                        break;
                 }
             }
 
             $i = 0;
             $wheresCount = count($wheres);
 
-            for($ind = 0; $ind < $wheresCount; $ind++ ){
-                if(isset($wheres[$ind]['value']) && isset($tipos[strtolower($wheres[$ind]['column'])])){
+            for ($ind = 0; $ind < $wheresCount; $ind++) {
+                if (
+                    isset($wheres[$ind]['value']) &&
+                    isset($tipos[strtolower($wheres[$ind]['column'])])
+                ) {
                     if (is_object($wheres[$ind]['value']) === false) {
-                        if(in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)){
-                            if(!is_null($bindings[$i])){
-                                $new_binds[$i] = $bindings[$i]/1;
-                            }else{
-                                $new_binds[$i] = null;
+                        if (
+                            in_array(
+                                strtolower($tipos[
+                                    strtolower($wheres[$ind]['column'])
+                                ]),
+                                $this->withoutQuotes
+                            )
+                        ) {
+                            if (!is_null($bindings[$i])) {
+                                $newBinds[$i] = $bindings[$i] / 1;
+                            } else {
+                                $newBinds[$i] = null;
                             }
-                        }else{
-                            $new_binds[$i] = (string)$bindings[$i];
+                        } else {
+                            $newBinds[$i] = (string) $bindings[$i];
                         }
                         $i++;
                     }
                 }
             }
 
-            $new_format[$tables] = [];
+            $newFormat[$tables] = [];
         }
 
-        $wheres = (array)$builder->wheres;
+        $wheres = (array) $builder->wheres;
         $i = 0;
         $wheresCount = count($wheres);
 
-        for ($ind = 0; $ind < $wheresCount; $ind++ ) {
+        for ($ind = 0; $ind < $wheresCount; $ind++) {
             if (isset($wheres[$ind]['value'])) {
                 if (is_object($wheres[$ind]['value']) === false) {
-                    if (in_array(strtolower($tipos[strtolower($wheres[$ind]['column'])]), $this->without_quotes)) {
+                    if (
+                        in_array(
+                            strtolower($tipos[
+                                strtolower($wheres[$ind]['column'])
+                            ]),
+                            $this->withoutQuotes
+                        )
+                    ) {
                         if (!is_null($bindings[$i])) {
-                            $new_binds[$i] = $bindings[$i]/1;
+                            $newBinds[$i] = $bindings[$i] / 1;
                         } else {
-                            $new_binds[$i] = null;
+                            $newBinds[$i] = null;
                         }
                     } else {
-                        $new_binds[$i] = (string)$bindings[$i];
+                        $newBinds[$i] = (string) $bindings[$i];
                     }
                     $i++;
                 }
             }
         }
 
-        return $new_binds;
+        return $newBinds;
     }
 
     private function queryStringForSelect($tables)
     {
         $explicitDB = explode('..', $tables);
         if (isset($explicitDB[1])) {
-            return <<<QUERY
-select a.name,
-b.name AS customtype,
-st.name as type
-FROM {$explicitDB[0]}..syscolumns a, {$explicitDB[0]}..systypes b, {$explicitDB[0]}..systypes s, {$explicitDB[0]}..systypes st
-WHERE a.usertype = b.usertype
-AND s.usertype = a.usertype
-AND s.type = st.type
-AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-AND st.usertype < 100
-AND object_name(a.id, db_id('{$explicitDB[0]}')) = '{$explicitDB[1]}'
-QUERY;
+            return "
+                SELECT
+                    a.name,
+                    b.name AS customtype,
+                    st.name AS type
+                FROM
+                    {$explicitDB[0]}..syscolumns a,
+                    {$explicitDB[0]}..systypes b,
+                    {$explicitDB[0]}..systypes s,
+                    {$explicitDB[0]}..systypes st
+                WHERE
+                    a.usertype = b.usertype AND
+                    s.usertype = a.usertype AND
+                    s.type = st.type AND
+                    st.name NOT IN (
+                        'timestamp',
+                        'sysname',
+                        'longsysname',
+                        'nchar',
+                        'nvarchar'
+                    ) AND
+                    st.usertype < 100 AND
+                    object_name (
+                        a.id,
+                        db_id ('{$explicitDB[0]}')
+                    ) = '{$explicitDB[1]}'";
         } else {
-            return <<<QUERY
-select a.name, st.name as type
-FROM syscolumns a, systypes  b, systypes s, systypes st
-WHERE a.usertype = b.usertype
-AND s.usertype = a.usertype
-AND s.type = st.type
-AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-AND st.usertype < 100
-AND object_name(a.id) = '{$tables}'
-QUERY;
+            return "
+                SELECT
+                    a.name,
+                    st.name AS type
+                FROM
+                    syscolumns a,
+                    systypes b,
+                    systypes s,
+                    systypes st
+                WHERE
+                    a.usertype = b.usertype AND
+                    s.usertype = a.usertype AND
+                    s.type = st.type AND
+                    st.name NOT IN (
+                        'timestamp',
+                        'sysname',
+                        'longsysname',
+                        'nchar',
+                        'nvarchar'
+                    ) AND
+                    st.usertype < 100 AND
+                    object_name (a.id) = '{$tables}'";
         }
     }
 
     /**
-     * Set new bindings with specified column types to Sybase
+     * Set new bindings with specified column types to Sybase.
      *
      * @param  string  $query
      * @param  array   $bindings
-     * @return mixed   $new_binds
+     * @return mixed   $newBinds
      */
     private function compileBindings($query, $bindings)
     {
@@ -236,9 +289,9 @@ QUERY;
         }
 
         $bindings = $this->prepareBindings($bindings);
-        $new_format = [];
+        $newFormat = [];
 
-        switch(explode(' ', $query)[0]){
+        switch (explode(' ', $query)[0]) {
             case "select":
                 $builder = $this->queryGrammar->getBuilder();
                 if ($builder != NULL && $builder->wheres != NULL) {
@@ -247,20 +300,35 @@ QUERY;
                     return $bindings;
                 }
             case "insert":
-                preg_match("/(?'tables'.*) \((?'attributes'.*)\) values/i" ,$query, $matches);
+                preg_match(
+                    "/(?'tables'.*) \((?'attributes'.*)\) values/i",
+                    $query,
+                    $matches
+                );
                 break;
             case "update":
-                preg_match("/(?'tables'.*) set (?'attributes'.*)/i" ,$query, $matches);
+                preg_match(
+                    "/(?'tables'.*) set (?'attributes'.*)/i",
+                    $query,
+                    $matches
+                );
                 break;
             case "delete":
-                preg_match("/(?'tables'.*) where (?'attributes'.*)/i" ,$query, $matches);
+                preg_match(
+                    "/(?'tables'.*) where (?'attributes'.*)/i",
+                    $query,
+                    $matches
+                );
                 break;
             default:
                 return $bindings;
                 break;
         }
 
-        $desQuery = array_intersect_key($matches, array_flip(array_filter(array_keys($matches), 'is_string')));
+        $desQuery = array_intersect_key(
+            $matches,
+            array_flip(array_filter(array_keys($matches), 'is_string'))
+        );
 
         if (is_array($desQuery['tables'])) {
             $desQuery['tables'] = implode($desQuery['tables'], ' ');
@@ -270,9 +338,13 @@ QUERY;
         }
 
         unset($matches);
-        unset($query_type);
+        unset($queryType);
         preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
-        preg_match_all("/\[([^\]]*)\]/", str_replace( "].[].[", '..' , $desQuery['tables']), $arrTables);
+        preg_match_all(
+            "/\[([^\]]*)\]/",
+            str_replace("].[].[", '..', $desQuery['tables']),
+            $arrTables
+        );
 
         $arrQuery = $arrQuery[1];
         $arrTables = $arrTables[1];
@@ -285,97 +357,139 @@ QUERY;
             return $bindings;
         }
 
-        foreach($arrQuery as $key=>$campos){
+        foreach ($arrQuery as $key => $campos) {
             $itsTable = in_array($campos, $arrTables);
 
-            if ($itsTable || ($numTables  == 1 && isset($table) && $key == 0)) {
-                if($numTables > 1){
+            if ($itsTable || ($numTables == 1 && isset($table) && $key == 0)) {
+                if ($numTables > 1) {
                     $table = $campos;
                 }
-                if (!array_key_exists($table, $new_format)) {
-                    $queryRes = $this->getPdo()->query($this->queryStringForCompileBindings($table));
+                if (!array_key_exists($table, $newFormat)) {
+                    $queryRes = $this->getPdo()->query(
+                        $this->queryStringForCompileBindings($table)
+                    );
                     $types[$table] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
                     for ($k = 0; $k < count($types[$table]); $k++) {
-                        $types[$table][$types[$table][$k]['name']] = $types[$table][$k];
+                        $types[$table][
+                            $types[$table][$k]['name']
+                        ] = $types[$table][$k];
                         unset($types[$table][$k]);
                     }
-                    $new_format[$table] = [];
+                    $newFormat[$table] = [];
                 }
             }
 
             if (!$itsTable) {
-                if (count($bindings)>$ind) {
-                    array_push($new_format[$table], ['campo' => $campos, 'binding' => $ind]);
-                    if (in_array(strtolower($types[$table][$campos]['type']), $this->without_quotes)) {
+                if (count($bindings) > $ind) {
+                    array_push(
+                        $newFormat[$table], [
+                            'campo' => $campos,
+                            'binding' => $ind
+                        ]
+                    );
+                    if (
+                        in_array(
+                            strtolower($types[$table][$campos]['type']),
+                            $this->withoutQuotes
+                        )
+                    ) {
                         if (!is_null($bindings[$ind])) {
-                            $new_binds[$ind] = $bindings[$ind]/1;
+                            $newBinds[$ind] = $bindings[$ind] / 1;
                         } else {
-                            $new_binds[$ind] = null;
+                            $newBinds[$ind] = null;
                         }
                     } else {
-                        $new_binds[$ind] = (string)$bindings[$ind];
+                        $newBinds[$ind] = (string) $bindings[$ind];
                     }
                 } else {
-                    array_push($new_format[$table], ['campo' => $campos]);
+                    array_push($newFormat[$table], ['campo' => $campos]);
                 }
                 $ind++;
             }
         }
 
-        return $new_binds;
+        return $newBinds;
     }
 
     private function queryStringForCompileBindings($table)
     {
         $explicitDB = explode('..', $table);
         if (isset($explicitDB[1])) {
-            return <<<QUERY
-select a.name,
-b.name AS customtype,
-st.name as type
-FROM {$explicitDB[0]}..syscolumns a, {$explicitDB[0]}..systypes b, {$explicitDB[0]}..systypes s, {$explicitDB[0]}..systypes st
-WHERE a.usertype = b.usertype
-AND s.usertype = a.usertype
-AND s.type = st.type
-AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-AND st.usertype < 100
-AND object_name(a.id, db_id('{$explicitDB[0]}')) = '{$explicitDB[1]}'
-QUERY;
+            return "
+                SELECT
+                    a.name,
+                    b.name AS customtype,
+                    st.name AS type
+                FROM
+                    {$explicitDB[0]}..syscolumns a,
+                    {$explicitDB[0]}..systypes b,
+                    {$explicitDB[0]}..systypes s,
+                    {$explicitDB[0]}..systypes st
+                WHERE
+                    a.usertype = b.usertype AND
+                    s.usertype = a.usertype AND
+                    s.type = st.type AND
+                    st.name NOT IN (
+                        'timestamp',
+                        'sysname',
+                        'longsysname',
+                        'nchar',
+                        'nvarchar'
+                    ) AND
+                    st.usertype < 100 AND
+                    object_name (
+                        a.id,
+                        db_id ('{$explicitDB[0]}')
+                    ) = '{$explicitDB[1]}'";
         } else {
-            return <<<QUERY
-select a.name, st.name as type
-FROM syscolumns a, systypes  b, systypes s, systypes st
-WHERE a.usertype = b.usertype
-AND s.usertype = a.usertype
-AND s.type = st.type
-AND st.name not in ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-AND st.usertype < 100
-AND object_name(a.id) = '{$table}'
-QUERY;
+            return "
+                SELECT
+                    a.name,
+                    st.name AS type
+                FROM
+                    syscolumns a,
+                    systypes b,
+                    systypes s,
+                    systypes st
+                WHERE
+                    a.usertype = b.usertype AND
+                    s.usertype = a.usertype AND
+                    s.type = st.type AND
+                    st.name NOT IN (
+                        'timestamp',
+                        'sysname',
+                        'longsysname',
+                        'nchar',
+                        'nvarchar'
+                    ) AND
+                    st.usertype < 100 AND
+                    object_name(a.id) = '{$table}'";
         }
     }
 
     /**
-     * Set new bindings with specified column types to Sybase
+     * Set new bindings with specified column types to Sybase.
+     * Poderia compilar novamente dos bindings usando os PDO::PARAM, porém,
+     * não tem nenhuma constante que lide com decimais, logo, a única maneira
+     * seria colocando PDO::PARAM_STR, que colocaria plicas.
+     * Detalhes:
+     * http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
      *
      * @param  string  $query
      * @param  array  $bindings
      * @return string $query
     */
-    // Poderia compilar novamente dos bindings usando os PDO::PARAM, porém, não tem nenhuma constante que lide
-    // com decimais, logo, a única maneira seria colocando PDO::PARAM_STR, que colocaria plicas.
-    // Detalhes: http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
     private function compileNewQuery($query, $bindings)
     {
         $newQuery = "";
         $bindings = $this->compileBindings($query, $bindings);
         $partQuery = explode("?", $query);
-        for ($i = 0; $i<count($partQuery); $i++) {
+        for ($i = 0; $i < count($partQuery); $i++) {
             $newQuery .= $partQuery[$i];
             if ($i < count($bindings)) {
                 if (is_string($bindings[$i])) {
-                    $bindings[$i] = str_replace( "'", "''", $bindings[$i] );
-                    $newQuery .= "'".$bindings[$i]."'";
+                    $bindings[$i] = str_replace("'", "''", $bindings[$i]);
+                    $newQuery .= "'" . $bindings[$i] . "'";
                 } else {
                     if (!is_null($bindings[$i])) {
                         $newQuery .= $bindings[$i];
@@ -385,7 +499,7 @@ QUERY;
                 }
             }
         }
-        $newQuery = str_replace( "[]", '' ,$newQuery);
+        $newQuery = str_replace( "[]", '', $newQuery);
         return $newQuery;
     }
 
@@ -397,27 +511,56 @@ QUERY;
             $limit = 999999999999999999999999999;
         }
         $queryString = $this->queryStringForIdentity($from);
-        $identity = $this->getPdo()->query($queryString)->fetchAll($me->getFetchMode())[0];
+        $identity = $this->getPdo()->query($queryString)->fetchAll(
+            $me->getFetchMode()
+        )[0];
 
         if (count($identity) === 0) {
             $queryString = $this->queryStringForPrimaries($from);
-            $primaries = $this->getPdo()->query($queryString)->fetchAll($me->getFetchMode());
+            $primaries = $this->getPdo()->query($queryString)->fetchAll(
+                $me->getFetchMode()
+            );
             foreach ($primaries as $primary) {
-                $new_arr[] = $primary->primary_key.'+0 AS '.$primary->primary_key;
-                $where_arr[] = "#tmpPaginate.".$primary->primary_key.' = #tmpTable.'.$primary->primary_key;
+                $newArr[] = $primary->primary_key . '+0 AS ' .
+                    $primary->primary_key;
+                $whereArr[] = "#tmpPaginate." . $primary->primary_key .
+                    ' = #tmpTable.' . $primary->primary_key;
             }
-            $res_primaries = implode(', ',$new_arr);
-            $where_primaries = implode(' AND ',$where_arr);
+            $resPrimaries = implode(', ', $newArr);
+            $wherePrimaries = implode(' AND ', $whereArr);
         } else {
-            $res_primaries = $identity->column.'+0 AS '.$identity->column;
-            $where_primaries = "#tmpPaginate.".$identity->column.' = #tmpTable.'.$identity->column;
-            //Offset operation
-            $this->getPdo()->query(str_replace(" from ", " into #tmpPaginate from ", $this->compileNewQuery($query, $bindings)));
-            $this->getPdo()->query("SELECT ".$res_primaries.", idTmp=identity(18) INTO #tmpTable FROM #tmpPaginate");
-            return $this->getPdo()->query("SELECT  #tmpPaginate.*, #tmpTable.idTmp FROM #tmpTable INNER JOIN #tmpPaginate ON ".$where_primaries." WHERE #tmpTable.idTmp "
-                    . "BETWEEN ".($offset+1) ." AND ". ($offset+$limit)
-                    ." ORDER BY #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
-
+            $resPrimaries = $identity->column . '+0 AS ' . $identity->column;
+            $wherePrimaries = "#tmpPaginate." . $identity->column .
+                ' = #tmpTable.' . $identity->column;
+            // Offset operation
+            $this->getPdo()->query(str_replace(
+                " from ",
+                " into #tmpPaginate from ",
+                $this->compileNewQuery($query, $bindings)
+            ));
+            $this->getPdo()->query("
+                SELECT
+                    " . $resPrimaries . ",
+                    idTmp=identity(18)
+                INTO
+                    #tmpTable
+                FROM
+                    #tmpPaginate");
+            return $this->getPdo()->query("
+                SELECT
+                    #tmpPaginate.*,
+                    #tmpTable.idTmp
+                FROM
+                    #tmpTable
+                INNER JOIN
+                    #tmpPaginate
+                ON
+                    " . $wherePrimaries . "
+                WHERE
+                    #tmpTable.idTmp BETWEEN " . ($offset + 1) . " AND
+                    " . ($offset + $limit) . "
+                ORDER BY
+                    #tmpTable.idTmp ASC")->fetchAll($me->getFetchMode());
         }
     }
 
@@ -425,12 +568,27 @@ QUERY;
     {
         $explicitDB = explode('..', $from);
         if (isset($explicitDB[1])) {
-            return "select b.name as 'column'
-                from ".$explicitDB[0]."..syscolumns AS b INNER JOIN ".$explicitDB[0]."..sysobjects AS a
-                ON a.id = b.id WHERE status & 128 = 128 AND a.name ='".$explicitDB[1]."'";
+            return "
+                SELECT
+                    b.name AS 'column'
+                FROM
+                    " . $explicitDB[0] . "..syscolumns AS b
+                INNER JOIN
+                    " . $explicitDB[0] . "..sysobjects AS a
+                ON
+                    a.id = b.id
+                WHERE
+                    status & 128 = 128 AND
+                    a.name = '" . $explicitDB[1] . "'";
         } else {
-            return "select name as 'column' from syscolumns
-                where status & 128 = 128 AND object_name(id)='".$from."'";
+            return "
+                SELECT
+                    name AS 'column'
+                FROM
+                    syscolumns
+                WHERE
+                    status & 128 = 128 AND
+                    object_name (id) = '" . $from . "'";
         }
     }
 
@@ -438,13 +596,35 @@ QUERY;
     {
         $explicitDB = explode('..', $from);
         if (isset($explicitDB[1])) {
-            return "SELECT index_col(".$from.", i.indid, c.colid) AS primary_key
-                FROM ".$explicitDB[0]."..sysindexes i, ".$explicitDB[0]."..syscolumns c
-                WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')";
+            return "
+                SELECT
+                    index_col (
+                        " . $from . ",
+                        i.indid,
+                        c.colid
+                    ) AS primary_key
+                FROM
+                    " . $explicitDB[0] . "..sysindexes i,
+                    " . $explicitDB[0] . "..syscolumns c
+                WHERE
+                    i.id = c.id AND
+                    c.colid <= i.keycnt AND
+                    i.id = object_id ('" . $from . "')";
         } else {
-            return "SELECT index_col(".$from.", i.indid, c.colid) AS primary_key
-                FROM sysindexes i, syscolumns c
-                WHERE i.id = c.id AND c.colid <= i.keycnt AND i.id = object_id('".$from."')";
+            return "
+                SELECT
+                    index_col (
+                        " . $from . ",
+                        i.indid,
+                        c.colid
+                    ) AS primary_key
+                FROM
+                    sysindexes i,
+                    syscolumns c
+                WHERE
+                    i.id = c.id AND
+                    c.colid <= i.keycnt AND
+                    i.id = object_id ('" . $from . "')";
         }
     }
 
@@ -458,10 +638,12 @@ QUERY;
     */
     public function select($query, $bindings = array(), $useReadPdo = true)
     {
-        return $this->run($query, $bindings, function($query, $bindings) use ($useReadPdo)
-        {
+        return $this->run($query, $bindings, function (
+            $query,
+            $bindings
+        ) use ($useReadPdo) {
             if ($this->pretending()) {
-                return array();
+                return [];
             }
 
             if ($this->queryGrammar->getBuilder() != NULL) {
@@ -474,17 +656,17 @@ QUERY;
                 return $this->compileOffset($offset, $query, $bindings, $this);
             } else {
                 $result = [];
-                $statement = $this->getPdo()->query($this->compileNewQuery($query, $bindings));
+                $statement = $this->getPdo()->query($this->compileNewQuery(
+                    $query,
+                    $bindings
+                ));
                 do {
-                    $result+= $statement->fetchAll($this->getFetchMode());
+                    $result += $statement->fetchAll($this->getFetchMode());
                 } while ($statement->nextRowset());
                 return $result;
             }
         });
     }
-
-    
-
 
     /**
      * @param  string  $query
@@ -493,26 +675,30 @@ QUERY;
      */
     public function statement($query, $bindings = array())
     {
-        return $this->run($query, $bindings, function($query, $bindings)
-        {
+        return $this->run($query, $bindings, function ($query, $bindings) {
             if ($this->pretending()) {
                 return true;
             }
-            return $this->getPdo()->query($this->compileNewQuery($query, $bindings));
+            return $this->getPdo()->query($this->compileNewQuery(
+                $query,
+                $bindings
+            ));
         });
     }
 
-    public function affectingStatement($query, $bindings = array())
+    public function affectingStatement($query, $bindings = [])
     {
-        return $this->run($query, $bindings, function($query, $bindings)
-        {
+        return $this->run($query, $bindings, function ($query, $bindings) {
             if ($this->pretending()) {
                 return 0;
             }
-            return $this->getPdo()->query($this->compileNewQuery($query, $bindings))->rowCount();
+            return $this->getPdo()->query($this->compileNewQuery(
+                $query,
+                $bindings
+            ))->rowCount();
         });
     }
-    
+
     /**
     * Get the default fetch mode for the connection.
     *
