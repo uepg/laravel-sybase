@@ -14,7 +14,7 @@ Add the following in the require section of your **composer.json**:
 ```json
 "uepg/laravel-sybase": "~1.0"
 ```
-### Laravel 5.4, 5.5
+### Laravel 5.4, 5.5, 5.6, 5.7
 
 ```json
 "uepg/laravel-sybase": "~2.0"
