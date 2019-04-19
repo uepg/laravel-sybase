@@ -36,7 +36,7 @@ class SybaseGrammar extends Grammar {
      */
     public function compileTableExists()
     {
-        return "SELECT * FROM sysobjects WHERE type = 'U' AND name = '?'";
+        return "SELECT * FROM sysobjects WHERE type = 'U' AND name = ?";
     }
 
     /**
@@ -106,9 +106,16 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
+        // Verify if constraint length is lower to 30 characters.
+        if (strlen($command->index) > 30) {
+            $constraint = substr($command->index, 0, 30);
+        } else {
+            $constraint = $command->index;
+        }
+
         return "
             ALTER TABLE {$table}
-            ADD CONSTRAINT {$command->index}
+            ADD CONSTRAINT {$constraint}
             PRIMARY KEY ({$columns})";
     }
 
