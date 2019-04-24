@@ -62,7 +62,6 @@ return [
 ]
 ```
 
- 
 ## Configuration of freetds driver
 
 In Linux systems the driver version must be set in **freetds.conf** file to the right use of charset pages.
