@@ -30,6 +30,22 @@ class SybaseGrammar extends Grammar {
     ];
 
     /**
+     * Verify if $str length is lower to 30 characters.
+     *
+     * @return string
+     */
+    public function limit30Characters($str)
+    {
+        if (strlen($str) > 30) {
+            $result = substr($str, 0, 30);
+        } else {
+            $result = $str;
+        }
+
+        return $result;
+    }
+
+    /**
      * Compile the query to determine if a table exists.
      *
      * @return string
@@ -106,12 +122,7 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        // Verify if constraint length is lower to 30 characters.
-        if (strlen($command->index) > 30) {
-            $constraint = substr($command->index, 0, 30);
-        } else {
-            $constraint = $command->index;
-        }
+        $constraint = $this->limit30Characters($command->index);
 
         return "
             ALTER TABLE {$table}
@@ -132,7 +143,9 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        return "CREATE UNIQUE INDEX {$command->index} ON {$table} ({$columns})";
+        $index = $this->limit30Characters($command->index);
+
+        return "CREATE UNIQUE INDEX {$index} ON {$table} ({$columns})";
     }
 
     /**
@@ -148,7 +161,9 @@ class SybaseGrammar extends Grammar {
 
         $table = $this->wrapTable($blueprint);
 
-        return "CREATE INDEX {$command->index} ON {$table} ({$columns})";
+        $index = $this->limit30Characters($command->index);
+
+        return "CREATE INDEX {$index} ON {$table} ({$columns})";
     }
 
     /**
