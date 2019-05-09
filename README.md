@@ -26,7 +26,7 @@ Update the package dependencies executing:
 composer update
 ```
 
-Add the following entry to your providers array in **config/app.php** file: 
+Add the following entry to your providers array in **config/app.php** file:
 
 ```php
 Uepg\LaravelSybase\Database\SybaseServiceProvider::class
@@ -46,13 +46,14 @@ return [
         ...
 
         'sqlsrv' => [
-            'driver'   => 'sqlsrv',
-            'host'     => env('DB_HOST', 'sybase.myserver.br:5000'),
+            'driver' => 'sqlsrv',
+            'host' => env('DB_HOST', 'sybase.myserver.com'),
+            'port' => env('DB_PORT', '5000'),
             'database' => env('DB_DATABASE', 'mydatabase'),
-            'username' => env('DB_USERNAME', 'forge'),
-            'password' => env('DB_PASSWORD', 'secret'),
-            'charset'  => 'utf8',
-            'prefix'   => '',
+            'username' => env('DB_USERNAME', 'user'),
+            'password' => env('DB_PASSWORD', 'password'),
+            'charset' => 'utf8',
+            'prefix' => '',
         ],
 
         ...
@@ -60,6 +61,21 @@ return [
 
     ...
 ]
+```
+
+Update your **.env** with the settings for the **sqlsrv** or your custom odbc. See the following example:
+
+```text
+...
+
+DB_CONNECTION=sqlsrv
+DB_HOST=sybase.myserver.com
+DB_PORT=5000
+DB_DATABASE=mydatabase
+DB_USERNAME=user
+DB_PASSWORD=password
+
+...
 ```
 
 ## Configuration of freetds driver
