@@ -4,13 +4,14 @@ namespace Uepg\LaravelSybase\Database;
 
 use Closure;
 use Exception;
+use PDO;
+use Illuminate\Database\Connection as IlluminateConnection;
 use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
-use Illuminate\Database\Query\Processors\SqlServerProcessor;
+use Uepg\LaravelSybase\Database\Query\Builder;
 use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
+use Uepg\LaravelSybase\Database\Query\Processor;
 use Uepg\LaravelSybase\Database\Schema\Blueprint;
 use Uepg\LaravelSybase\Database\Schema\Grammar as SchemaGrammar;
-use Illuminate\Database\Connection as IlluminateConnection;
-use Illuminate\Database\Query\Builder;
 
 class Connection extends IlluminateConnection
 {
@@ -71,7 +72,7 @@ class Connection extends IlluminateConnection
     /**
      * Get the default query grammar instance.
      *
-     * @return \Illuminate\Database\Query\Grammars\SqlServerGrammar
+     * @return \Uepg\LaravelSybase\Database\Query\Grammar
      */
     protected function getDefaultQueryGrammar()
     {
@@ -81,7 +82,7 @@ class Connection extends IlluminateConnection
     /**
      * Get the default schema grammar instance.
      *
-     * @return \Illuminate\Database\Schema\Grammars\SqlServerGrammar
+     * @return \Uepg\LaravelSybase\Database\Schema\Grammar
      */
     protected function getDefaultSchemaGrammar()
     {
@@ -91,11 +92,11 @@ class Connection extends IlluminateConnection
     /**
      * Get the default post processor instance.
      *
-     * @return \Illuminate\Database\Query\Processors\SqlServerProcessor
+     * @return \Uepg\LaravelSybase\Database\Query\Processor
      */
     protected function getDefaultPostProcessor()
     {
-        return new SqlServerProcessor;
+        return new Processor;
     }
 
     /**
@@ -130,7 +131,7 @@ class Connection extends IlluminateConnection
             }
             $queryString = $this->queryStringForSelect($tables);
             $queryRes = $this->getPdo()->query($queryString);
-            $types[$tables] = $queryRes->fetchAll(\PDO::FETCH_NAMED);
+            $types[$tables] = $queryRes->fetchAll(PDO::FETCH_NAMED);
 
             foreach ($types[$tables] as &$row) {
                 $tipos[strtolower($row['name'])] = $row['type'];
@@ -369,7 +370,7 @@ class Connection extends IlluminateConnection
                     $queryRes = $this->getPdo()->query(
                         $this->queryStringForCompileBindings($table)
                     );
-                    $types[$table] = $queryRes->fetchAll(\PDO::FETCH_ASSOC);
+                    $types[$table] = $queryRes->fetchAll(PDO::FETCH_ASSOC);
                     for ($k = 0; $k < count($types[$table]); $k++) {
                         $types[$table][
                             $types[$table][$k]['name']
@@ -711,14 +712,14 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * @return \Illuminate\Database\Schema\Builder
+     * @return \Uepg\LaravelSybase\Database\Query\Builder
      */
     public function getSchemaBuilder()
     {
         if (is_null($this->schemaGrammar)) {
             $this->useDefaultSchemaGrammar();
         }
-        $builder = new \Illuminate\Database\Schema\Builder($this);
+        $builder = new Builder($this);
         $builder->blueprintResolver(function ($table, $callback) {
             return new Blueprint($table, $callback);
         });

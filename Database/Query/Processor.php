@@ -2,9 +2,9 @@
 
 namespace Uepg\LaravelSybase\Database\Query;
 
-use Illuminate\Database\Query\Processors\Processor as IlluminateProcessor;
+use Illuminate\Database\Query\Processors\SqlServerProcessor;
 
-class Processor extends IlluminateProcessor
+class Processor extends SqlServerProcessor
 {
     //
 }

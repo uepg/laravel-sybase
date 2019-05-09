@@ -19,7 +19,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Uepg\\LaravelSybase\\Database\\": "Database/"
+            "Uepg\\LaravelSybase\\Database\\": "Database/",
+            "Uepg\\LaravelSybase\\Support\\": "Support/"
         }
     }
 }

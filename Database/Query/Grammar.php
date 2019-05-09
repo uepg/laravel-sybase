@@ -2,8 +2,8 @@
 
 namespace Uepg\LaravelSybase\Database\Query;
 
-use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
+use Uepg\LaravelSybase\Database\Query\Builder;
 
 class Grammar extends IlluminateGrammar
 {
@@ -27,7 +27,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a select query into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder
+     * @param  \Uepg\LaravelSybase\Database\Query\Builder
      * @return string
      */
     public function compileSelect(Builder $query)
@@ -41,7 +41,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "select *" portion of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
      * @param  array  $columns
      * @return string
      */
@@ -67,7 +67,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "from" portion of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
      * @param  string  $table
      * @return string
      */
@@ -90,7 +90,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "limit" portions of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
      * @param  int  $limit
      * @return string
      */
@@ -102,7 +102,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "offset" portions of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
      * @param  int  $offset
      * @return string
      */
@@ -114,7 +114,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a truncate table statement into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
      * @return array
      */
     public function compileTruncate(Builder $query)
