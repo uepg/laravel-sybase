@@ -2,11 +2,12 @@
 
 namespace Uepg\LaravelSybase\Database\Schema;
 
-use Illuminate\Database\Schema\Grammars\Grammar;
+use Illuminate\Database\Schema\Grammars\Grammar as IlluminateGrammar;
 use Illuminate\Support\Fluent;
-use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;
+use Uepg\LaravelSybase\Database\Schema\Blueprint;
 
-class SybaseGrammar extends Grammar {
+class Grammar extends IlluminateGrammar
+{
     /**
      * The possible column modifiers.
      *
@@ -80,7 +81,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a create table command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -96,7 +97,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a create table command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -112,7 +113,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a primary key command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -133,7 +134,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a unique key command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -151,7 +152,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a plain index key command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -169,7 +170,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a drop table command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -181,7 +182,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a drop table (if exists) command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -201,7 +202,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a drop column command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -218,7 +219,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a drop primary key command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -232,7 +233,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a drop unique key command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -246,7 +247,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a drop index command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -260,7 +261,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a drop foreign key command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -274,7 +275,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Compile a rename table command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $command
      * @return string
      */
@@ -576,7 +577,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Get the SQL for a nullable column modifier.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $column
      * @return string|null
      */
@@ -588,7 +589,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Get the SQL for a default column modifier.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $column
      * @return string|null
      */
@@ -602,7 +603,7 @@ class SybaseGrammar extends Grammar {
     /**
      * Get the SQL for an auto-increment column modifier.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint  $blueprint
+     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
      * @param  \Illuminate\Support\Fluent  $column
      * @return string|null
      */

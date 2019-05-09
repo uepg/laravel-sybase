@@ -92,14 +92,14 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
 
 ## Setting to use numeric data type
 
-In the migration file you must replace `use Illuminate\Database\Schema\Blueprint;` with `use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;`. See the following example:
+In the migration file you must replace `use Illuminate\Database\Schema\Blueprint;` with `use Uepg\LaravelSybase\Database\Schema\Blueprint;`. See the following example:
 
 ```php
 <?php
 
 use Illuminate\Support\Facades\Schema;
 // use Illuminate\Database\Schema\Blueprint;
-use Uepg\LaravelSybase\Database\Schema\BlueprintSybase as Blueprint;
+use Uepg\LaravelSybase\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
 class CreateTable extends Migration

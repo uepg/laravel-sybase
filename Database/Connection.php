@@ -6,13 +6,14 @@ use Closure;
 use Exception;
 use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Illuminate\Database\Query\Processors\SqlServerProcessor;
-use Uepg\LaravelSybase\Database\Query\SybaseGrammar as QueryGrammar;
-use Uepg\LaravelSybase\Database\Schema\BlueprintSybase;
-use Uepg\LaravelSybase\Database\Schema\SybaseGrammar as SchemaGrammar;
-use Illuminate\Database\Connection;
+use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
+use Uepg\LaravelSybase\Database\Schema\Blueprint;
+use Uepg\LaravelSybase\Database\Schema\Grammar as SchemaGrammar;
+use Illuminate\Database\Connection as IlluminateConnection;
 use Illuminate\Database\Query\Builder;
 
-class SybaseConnection extends Connection {
+class Connection extends IlluminateConnection
+{
     /**
      * All types without quotes in Sybase's query.
      *
@@ -90,7 +91,7 @@ class SybaseConnection extends Connection {
     /**
      * Get the default post processor instance.
      *
-     * @return \Illuminate\Database\Query\Processors\Processor
+     * @return \Illuminate\Database\Query\Processors\SqlServerProcessor
      */
     protected function getDefaultPostProcessor()
     {
@@ -719,7 +720,7 @@ class SybaseConnection extends Connection {
         }
         $builder = new \Illuminate\Database\Schema\Builder($this);
         $builder->blueprintResolver(function ($table, $callback) {
-            return new BlueprintSybase($table, $callback);
+            return new Blueprint($table, $callback);
         });
         return $builder;
     }

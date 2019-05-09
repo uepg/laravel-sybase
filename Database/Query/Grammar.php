@@ -3,9 +3,10 @@
 namespace Uepg\LaravelSybase\Database\Query;
 
 use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Query\Grammars\Grammar;
+use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 
-class SybaseGrammar extends Grammar {
+class Grammar extends IlluminateGrammar
+{
     /**
      * All of the available clause operators.
      *

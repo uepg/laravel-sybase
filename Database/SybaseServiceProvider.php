@@ -2,10 +2,10 @@
 
 namespace Uepg\LaravelSybase\Database;
 
-use Uepg\LaravelSybase\Database\SybaseConnection;
-use Uepg\LaravelSybase\Database\SybaseConnector;
+use Uepg\LaravelSybase\Database\Connection as SybaseConnection;
+use Uepg\LaravelSybase\Database\Connector;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\Connection;
+use Illuminate\Database\Connection as IlluminateConnection;
 
 class SybaseServiceProvider extends ServiceProvider
 {
@@ -16,7 +16,7 @@ class SybaseServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        Connection::resolverFor('sqlsrv', function (
+        IlluminateConnection::resolverFor('sqlsrv', function (
             $connection,
             $database,
             $prefix,
@@ -31,7 +31,7 @@ class SybaseServiceProvider extends ServiceProvider
         });
 
         $this->app->bind('db.connector.sqlsrv', function ($app) {
-            return new SybaseConnector();
+            return new Connector();
         });
 
         // $this->app->bind('db.connection.sqlsrv', function (
