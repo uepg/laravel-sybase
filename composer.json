@@ -1,7 +1,7 @@
 {
     "name": "uepg/laravel-sybase",
-    "description": "Sybase based Eloquent module extension for Laravel 5.x.",
     "type": "library",
+    "description": "Sybase based Eloquent module extension for Laravel 5.x.",
     "authors": [
         {
             "name": "Gabriel Tadra Mainginski",
@@ -12,15 +12,26 @@
             "email": "mazer@uepg.br"
         }
     ],
-    "minimum-stability": "dev",
+    "keywords": [
+        "sybase"
+    ],
+    "license": "GPL-2.0-only",
     "require": {
         "php": ">=5.5",
         "laravel/framework": "5.*"
+    },
+    "require-dev": {},
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     },
     "autoload": {
         "psr-4": {
             "Uepg\\LaravelSybase\\Database\\": "Database/",
             "Uepg\\LaravelSybase\\Support\\": "Support/"
         }
-    }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
