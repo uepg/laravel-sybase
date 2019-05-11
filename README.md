@@ -31,10 +31,16 @@ Update the package dependencies executing:
 composer update
 ```
 
-Add the following entry to your providers array in **config/app.php** file:
+Add the following entry to your providers array in **config/app.php** file, optional in Laravel 5.5 or above:
 
 ```php
-Uepg\LaravelSybase\SybaseServiceProvider::class
+Uepg\LaravelSybase\SybaseServiceProvider::class,
+```
+
+Add the following entry to your aliases array in **config/app.php** file, optional in Laravel 5.5 or above:
+
+```php
+'UepgBlueprint' => Uepg\LaravelSybase\Database\Schema\Blueprint::class,
 ```
 
 Update your **config/database.php's** default driver with the settings for the **sqlsrv** or your custom odbc. See the following example:
@@ -50,7 +56,7 @@ return [
     'connections' => [
         ...
 
-        'sqlsrv' => [
+        'sybase' => [
             'driver' => 'sqlsrv',
             'host' => env('DB_HOST', 'sybase.myserver.com'),
             'port' => env('DB_PORT', '5000'),
@@ -73,7 +79,7 @@ Update your **.env** with the settings for the **sqlsrv** or your custom odbc. S
 ```text
 ...
 
-DB_CONNECTION=sqlsrv
+DB_CONNECTION=sybase
 DB_HOST=sybase.myserver.com
 DB_PORT=5000
 DB_DATABASE=mydatabase
@@ -104,7 +110,7 @@ In the migration file you must replace `use Illuminate\Database\Schema\Blueprint
 
 use Illuminate\Support\Facades\Schema;
 // use Illuminate\Database\Schema\Blueprint;
-use Uepg\LaravelSybase\Database\Schema\Blueprint;
+use Uepg\LaravelSybase\Database\Schema\Blueprint; // or "use UepgBlueprint as Blueprint"
 use Illuminate\Database\Migrations\Migration;
 
 class CreateTable extends Migration
