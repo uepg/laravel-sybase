@@ -1,6 +1,11 @@
-# laravel-sybase
+# Sybase ASE based Eloquent module extension for Laravel 5.x
 
-Sybase ASE based Eloquent module extension for Laravel 5.x.
+[![Packagist Version](https://img.shields.io/packagist/v/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase)
+[![PHP from Packagist](https://img.shields.io/packagist/php-v/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase)
+[![Packagist](https://img.shields.io/packagist/dt/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase/stats)
+[![GitHub contributors](https://img.shields.io/github/contributors-anon/uepg/laravel-sybase.svg)](https://github.com/uepg/laravel-sybase/graphs/contributors)
+[![GitHub](https://img.shields.io/github/license/uepg/laravel-sybase.svg)](https://github.com/uepg/laravel-sybase/blob/master/LICENSE)
+
 * Enables use of multiple kinds of fields.
 * Use default eloquent: works with odbc and dblib!
 * Migrations! (WIP - Work in Progress)
