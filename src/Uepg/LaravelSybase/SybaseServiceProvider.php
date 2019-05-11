@@ -1,6 +1,6 @@
 <?php
 
-namespace Uepg\LaravelSybase\Database;
+namespace Uepg\LaravelSybase;
 
 use Illuminate\Database\Connection as IlluminateConnection;
 use Illuminate\Support\ServiceProvider;

@@ -28,10 +28,16 @@
         "preferred-install": "dist",
         "sort-packages": true
     },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Uepg\\LaravelSybase\\SybaseServiceProvider"
+            ]
+        }
+    },
     "autoload": {
         "psr-4": {
-            "Uepg\\LaravelSybase\\Database\\": "Database/",
-            "Uepg\\LaravelSybase\\Support\\": "Support/"
+            "Uepg\\LaravelSybase\\": "src/"
         }
     },
     "minimum-stability": "dev",

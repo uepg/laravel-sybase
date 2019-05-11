@@ -34,7 +34,7 @@ composer update
 Add the following entry to your providers array in **config/app.php** file:
 
 ```php
-Uepg\LaravelSybase\Database\SybaseServiceProvider::class
+Uepg\LaravelSybase\SybaseServiceProvider::class
 ```
 
 Update your **config/database.php's** default driver with the settings for the **sqlsrv** or your custom odbc. See the following example:
