@@ -2,9 +2,9 @@
 
 namespace Uepg\LaravelSybase\Database\Schema;
 
-use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
 
-class BlueprintSybase extends Blueprint
+class Blueprint extends IlluminateBlueprint
 {
     public function numeric($column, $total = 8, $autoIncrement = false)
     {
