@@ -3,7 +3,7 @@
 namespace Uepg\LaravelSybase\Database\Query;
 
 use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
-use Uepg\LaravelSybase\Database\Query\Builder;
+use Illuminate\Database\Query\Builder;
 
 class Grammar extends IlluminateGrammar
 {
