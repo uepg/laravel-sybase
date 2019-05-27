@@ -7,7 +7,7 @@ use Exception;
 use PDO;
 use Illuminate\Database\Connection as IlluminateConnection;
 use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
-use Uepg\LaravelSybase\Database\Query\Builder;
+use Illuminate\Database\Query\Builder;
 use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
 use Uepg\LaravelSybase\Database\Query\Processor;
 use Uepg\LaravelSybase\Database\Schema\Blueprint;
