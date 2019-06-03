@@ -2,9 +2,9 @@
 
 namespace Uepg\LaravelSybase\Database\Schema;
 
-use Illuminate\Database\Schema\Grammars\Grammar as IlluminateGrammar;
-use Uepg\LaravelSybase\Database\Schema\Blueprint;
 use Uepg\LaravelSybase\Support\Fluent;
+use Uepg\LaravelSybase\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\Grammars\Grammar as IlluminateGrammar;
 
 class Grammar extends IlluminateGrammar
 {

@@ -2,15 +2,15 @@
 
 namespace Uepg\LaravelSybase\Database;
 
+use PDO;
 use Closure;
 use Exception;
-use PDO;
-use Illuminate\Database\Connection as IlluminateConnection;
-use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Illuminate\Database\Query\Builder;
-use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
 use Uepg\LaravelSybase\Database\Query\Processor;
 use Uepg\LaravelSybase\Database\Schema\Blueprint;
+use Illuminate\Database\Connection as IlluminateConnection;
+use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
+use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
 use Uepg\LaravelSybase\Database\Schema\Grammar as SchemaGrammar;
 
 class Connection extends IlluminateConnection
