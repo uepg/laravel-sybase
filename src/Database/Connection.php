@@ -517,7 +517,7 @@ class Connection extends IlluminateConnection
             $me->getFetchMode()
         )[0];
 
-        if (count($identity) === 0) {
+        if (count((array)$identity) === 0) {
             $queryString = $this->queryStringForPrimaries($from);
             $primaries = $this->getPdo()->query($queryString)->fetchAll(
                 $me->getFetchMode()
