@@ -1,8 +1,18 @@
 # Release Notes
 
-## [Unreleased](https://github.com/uepg/laravel-sybase/compare/2.2.1...master)
+## [Unreleased](https://github.com/uepg/laravel-sybase/compare/2.2.3...master)
 
-## ## [2.2.1 (2019-05-26)](https://github.com/uepg/laravel-sybase/compare/2.2...2.2.1)
+## [2.2.3 (2019-06-03)](https://github.com/uepg/laravel-sybase/compare/2.2.2...2.2.3)
+
+Fix #49 count must be an array
+
+
+## [2.2.2 (2019-05-26)](https://github.com/uepg/laravel-sybase/compare/2.2.1...2.2.2)
+
+Fix Connection class
+
+
+## [2.2.1 (2019-05-26)](https://github.com/uepg/laravel-sybase/compare/2.2...2.2.1)
 
 Fix #48, it was breaking extension - @nunomazer
 
