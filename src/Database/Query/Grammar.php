@@ -120,7 +120,7 @@ class Grammar extends IlluminateGrammar
     public function compileTruncate(Builder $query)
     {
         return [
-            'truncate table ' . $this->wrapTable($query->from) => array()
+            'truncate table ' . $this->wrapTable($query->from) => []
         ];
     }
 

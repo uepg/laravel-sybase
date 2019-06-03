@@ -505,7 +505,7 @@ class Connection extends IlluminateConnection
         return $newQuery;
     }
 
-    public function compileOffset($offset, $query, $bindings = array(), $me)
+    public function compileOffset($offset, $query, $bindings = [], $me)
     {
         $limit = $this->queryGrammar->getBuilder()->limit;
         $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];
@@ -638,7 +638,7 @@ class Connection extends IlluminateConnection
      * @param  bool  $useReadPdo
      * @return array
     */
-    public function select($query, $bindings = array(), $useReadPdo = true)
+    public function select($query, $bindings = [], $useReadPdo = true)
     {
         return $this->run($query, $bindings, function (
             $query,
@@ -675,7 +675,7 @@ class Connection extends IlluminateConnection
      * @param  mixed array   $bindings
      * @return bool
      */
-    public function statement($query, $bindings = array())
+    public function statement($query, $bindings = [])
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
             if ($this->pretending()) {
