@@ -148,7 +148,7 @@ class Connection extends IlluminateConnection
 
             foreach ($builder->wheres as $w) {
                 switch ($w['type']) {
-                    case "Nested":
+                    case 'Nested':
                         $wheres += $w['query']->wheres;
                         break;
                     default:
@@ -294,28 +294,28 @@ class Connection extends IlluminateConnection
         $newFormat = [];
 
         switch (explode(' ', $query)[0]) {
-            case "select":
+            case 'select':
                 $builder = $this->queryGrammar->getBuilder();
                 if ($builder != NULL && $builder->wheres != NULL) {
                     return $this->compileForSelect($builder, $bindings);
                 } else {
                     return $bindings;
                 }
-            case "insert":
+            case 'insert':
                 preg_match(
                     "/(?'tables'.*) \((?'attributes'.*)\) values/i",
                     $query,
                     $matches
                 );
                 break;
-            case "update":
+            case 'update':
                 preg_match(
                     "/(?'tables'.*) set (?'attributes'.*)/i",
                     $query,
                     $matches
                 );
                 break;
-            case "delete":
+            case 'delete':
                 preg_match(
                     "/(?'tables'.*) where (?'attributes'.*)/i",
                     $query,
@@ -483,7 +483,7 @@ class Connection extends IlluminateConnection
     */
     private function compileNewQuery($query, $bindings)
     {
-        $newQuery = "";
+        $newQuery = '';
         $bindings = $this->compileBindings($query, $bindings);
         $partQuery = explode("?", $query);
         for ($i = 0; $i < count($partQuery); $i++) {
@@ -501,14 +501,14 @@ class Connection extends IlluminateConnection
                 }
             }
         }
-        $newQuery = str_replace( "[]", '', $newQuery);
+        $newQuery = str_replace( '[]', '', $newQuery);
         return $newQuery;
     }
 
     public function compileOffset($offset, $query, $bindings = [], $me)
     {
         $limit = $this->queryGrammar->getBuilder()->limit;
-        $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];
+        $from = explode(' ', $this->queryGrammar->getBuilder()->from)[0];
         if (!isset($limit)) {
             $limit = 999999999999999999999999999;
         }
@@ -536,7 +536,7 @@ class Connection extends IlluminateConnection
                 ' = #tmpTable.' . $identity->column;
             // Offset operation
             $this->getPdo()->query(str_replace(
-                " from ",
+                ' from ',
                 " into #tmpPaginate from ",
                 $this->compileNewQuery($query, $bindings)
             ));
