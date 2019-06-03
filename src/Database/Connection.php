@@ -109,6 +109,13 @@ class Connection extends IlluminateConnection
         return new DoctrineDriver;
     }
 
+    /**
+     * Compile for select.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $builder
+     * @param  array  $bindings
+     * @return array
+     */
     private function compileForSelect(Builder $builder, $bindings) {
         $arrTables = [];
         array_push($arrTables, $builder->from);
@@ -221,6 +228,12 @@ class Connection extends IlluminateConnection
         return $newBinds;
     }
 
+    /**
+     * Query string for select.
+     *
+     * @param  string  $tables
+     * @return string
+     */
     private function queryStringForSelect($tables)
     {
         $explicitDB = explode('..', $tables);
@@ -281,8 +294,8 @@ class Connection extends IlluminateConnection
      * Set new bindings with specified column types to Sybase.
      *
      * @param  string  $query
-     * @param  array   $bindings
-     * @return mixed   $newBinds
+     * @param  array  $bindings
+     * @return mixed  $newBinds
      */
     private function compileBindings($query, $bindings)
     {
@@ -413,6 +426,12 @@ class Connection extends IlluminateConnection
         return $newBinds;
     }
 
+    /**
+     * Query string for compile bindings.
+     *
+     * @param  string  $table
+     * @return string
+     */
     private function queryStringForCompileBindings($table)
     {
         $explicitDB = explode('..', $table);
@@ -471,11 +490,11 @@ class Connection extends IlluminateConnection
 
     /**
      * Set new bindings with specified column types to Sybase.
-     * Poderia compilar novamente dos bindings usando os PDO::PARAM, porém,
-     * não tem nenhuma constante que lide com decimais, logo, a única maneira
-     * seria colocando PDO::PARAM_STR, que colocaria plicas.
-     * Detalhes:
-     * http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
+     *
+     * It could compile again from bindings using PDO::PARAM, however, it has
+     * no constants that deal with decimals, so the only way would be to put
+     * PDO::PARAM_STR, which would put quotes.
+     * @link http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
      *
      * @param  string  $query
      * @param  array  $bindings
@@ -505,6 +524,15 @@ class Connection extends IlluminateConnection
         return $newQuery;
     }
 
+    /**
+     * Compile offset.
+     *
+     * @param  int  $offset
+     * @param  string  $query
+     * @param  array  $bindings
+     * @param  \Uepg\LaravelSybase\Database\Connection  $me
+     * @return string
+     */
     public function compileOffset($offset, $query, $bindings = [], $me)
     {
         $limit = $this->queryGrammar->getBuilder()->limit;
@@ -566,6 +594,12 @@ class Connection extends IlluminateConnection
         }
     }
 
+    /**
+     * Query string for identity.
+     *
+     * @param  string  $from
+     * @return string
+     */
     private function queryStringForIdentity($from)
     {
         $explicitDB = explode('..', $from);
@@ -594,6 +628,12 @@ class Connection extends IlluminateConnection
         }
     }
 
+    /**
+     * Query string for primaries.
+     *
+     * @param  string  $from
+     * @return string
+     */
     private function queryStringForPrimaries($from)
     {
         $explicitDB = explode('..', $from);
@@ -671,8 +711,10 @@ class Connection extends IlluminateConnection
     }
 
     /**
+     * Get the statement.
+     *
      * @param  string  $query
-     * @param  mixed array   $bindings
+     * @param  mixed|array   $bindings
      * @return bool
      */
     public function statement($query, $bindings = [])
@@ -688,6 +730,13 @@ class Connection extends IlluminateConnection
         });
     }
 
+    /**
+     * Affecting statement.
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     * @return int
+     */
     public function affectingStatement($query, $bindings = [])
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
@@ -712,7 +761,9 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * @return \Uepg\LaravelSybase\Database\Query\Builder
+     * Get SchemaBuilder.
+     *
+     * @return \Illuminate\Database\Query\Builder
      */
     public function getSchemaBuilder()
     {

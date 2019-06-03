@@ -33,6 +33,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Verify if $str length is lower to 30 characters.
      *
+     * @param  string  $str
      * @return string
      */
     public function limit30Characters($str)
