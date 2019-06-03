@@ -43,6 +43,7 @@ class Grammar extends IlluminateGrammar
     public function compileSelect(Builder $query)
     {
         $this->builder = $query;
+
         $components = $this->compileComponents($query);
 
         return $this->concatenate($components);
