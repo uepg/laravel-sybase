@@ -3,7 +3,6 @@
 namespace Uepg\LaravelSybase\Database\Schema;
 
 use Uepg\LaravelSybase\Support\Fluent;
-use Uepg\LaravelSybase\Database\Schema\Blueprint;
 use Illuminate\Database\Schema\Grammars\Grammar as IlluminateGrammar;
 
 class Grammar extends IlluminateGrammar
@@ -16,7 +15,7 @@ class Grammar extends IlluminateGrammar
     protected $modifiers = [
         'Increment',
         'Nullable',
-        'Default'
+        'Default',
     ];
 
     /**
@@ -27,7 +26,7 @@ class Grammar extends IlluminateGrammar
     protected $serials = [
         'bigInteger',
         'integer',
-        'numeric'
+        'numeric',
     ];
 
     /**
@@ -90,7 +89,7 @@ class Grammar extends IlluminateGrammar
     {
         $columns = implode(', ', $this->getColumns($blueprint));
 
-        return 'CREATE TABLE ' . $this->wrapTable($blueprint) . " (
+        return 'CREATE TABLE '.$this->wrapTable($blueprint)." (
             $columns
         )";
     }
@@ -108,7 +107,7 @@ class Grammar extends IlluminateGrammar
 
         $columns = $this->getColumns($blueprint);
 
-        return 'ALTER TABLE ' . $table . ' ADD ' . implode(', ', $columns);
+        return 'ALTER TABLE '.$table.' ADD '.implode(', ', $columns);
     }
 
     /**
@@ -177,7 +176,7 @@ class Grammar extends IlluminateGrammar
      */
     public function compileDrop(Blueprint $blueprint, Fluent $command)
     {
-        return 'DROP TABLE ' . $this->wrapTable($blueprint);
+        return 'DROP TABLE '.$this->wrapTable($blueprint);
     }
 
     /**
@@ -196,8 +195,8 @@ class Grammar extends IlluminateGrammar
                 FROM
                     INFORMATION_SCHEMA.TABLES
                 WHERE
-                    TABLE_NAME = '" . $blueprint->getTable() . "'
-            ) DROP TABLE " . $blueprint->getTable();
+                    TABLE_NAME = '".$blueprint->getTable()."'
+            ) DROP TABLE ".$blueprint->getTable();
     }
 
     /**
@@ -213,8 +212,8 @@ class Grammar extends IlluminateGrammar
 
         $table = $this->wrapTable($blueprint);
 
-        return 'ALTER TABLE ' . $table .
-            ' DROP COLUMN ' . implode(', ', $columns);
+        return 'ALTER TABLE '.$table.
+            ' DROP COLUMN '.implode(', ', $columns);
     }
 
     /**
@@ -284,7 +283,7 @@ class Grammar extends IlluminateGrammar
     {
         $from = $this->wrapTable($blueprint);
 
-        return "sp_rename {$from}, " . $this->wrapTable($command->to);
+        return "sp_rename {$from}, ".$this->wrapTable($command->to);
     }
 
     /**
@@ -596,8 +595,8 @@ class Grammar extends IlluminateGrammar
      */
     protected function modifyDefault(Blueprint $blueprint, Fluent $column)
     {
-        if (!is_null($column->default)) {
-            return ' default ' . $this->getDefaultValue($column->default);
+        if (! is_null($column->default)) {
+            return ' default '.$this->getDefaultValue($column->default);
         }
     }
 
