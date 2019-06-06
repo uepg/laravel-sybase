@@ -43,7 +43,7 @@ Add the following entry to your aliases array in **config/app.php** file, option
 'UepgBlueprint' => Uepg\LaravelSybase\Database\Schema\Blueprint::class,
 ```
 
-Update your **config/database.php's** default driver with the settings for the **sqlsrv** or your custom odbc. See the following example:
+Update your **config/database.php's** default driver with the settings for the **sybase** or your custom odbc. See the following example:
 
 ```php
 <?php
@@ -74,7 +74,7 @@ return [
 ]
 ```
 
-Update your **.env** with the settings for the **sqlsrv** or your custom odbc. See the following example:
+Update your **.env** with the settings for the **sybase** or your custom odbc. See the following example:
 
 ```text
 ...
