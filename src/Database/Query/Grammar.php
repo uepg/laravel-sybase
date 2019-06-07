@@ -2,8 +2,8 @@
 
 namespace Uepg\LaravelSybase\Database\Query;
 
-use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 
 class Grammar extends IlluminateGrammar
 {
@@ -18,8 +18,18 @@ class Grammar extends IlluminateGrammar
         '&', '&=', '|', '|=', '^', '^=',
     ];
 
+    /**
+     * Builder for query.
+     *
+     * @var \Illuminate\Database\Query\Builder
+     */
     protected $builder;
 
+    /**
+     * Get the builder.
+     *
+     * @return \Illuminate\Database\Query\Builder
+     */
     public function getBuilder(){
         return $this->builder;
     }
@@ -27,12 +37,13 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a select query into SQL.
      *
-     * @param  \Uepg\LaravelSybase\Database\Query\Builder
+     * @param  \Illuminate\Database\Query\Builder  $query
      * @return string
      */
     public function compileSelect(Builder $query)
     {
         $this->builder = $query;
+
         $components = $this->compileComponents($query);
 
         return $this->concatenate($components);
@@ -41,7 +52,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "select *" portion of the query.
      *
-     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
+     * @param  \Illuminate\Database\Query\Builder  $query
      * @param  array  $columns
      * @return string
      */
@@ -67,7 +78,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "from" portion of the query.
      *
-     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
+     * @param  \Illuminate\Database\Query\Builder  $query
      * @param  string  $table
      * @return string
      */
@@ -90,7 +101,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "limit" portions of the query.
      *
-     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
+     * @param  \Illuminate\Database\Query\Builder  $query
      * @param  int  $limit
      * @return string
      */
@@ -102,7 +113,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "offset" portions of the query.
      *
-     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
+     * @param  \Illuminate\Database\Query\Builder  $query
      * @param  int  $offset
      * @return string
      */
@@ -114,13 +125,13 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a truncate table statement into SQL.
      *
-     * @param  \Uepg\LaravelSybase\Database\Query\Builder  $query
+     * @param  \Illuminate\Database\Query\Builder  $query
      * @return array
      */
     public function compileTruncate(Builder $query)
     {
         return [
-            'truncate table ' . $this->wrapTable($query->from) => array()
+            'truncate table ' . $this->wrapTable($query->from) => []
         ];
     }
 

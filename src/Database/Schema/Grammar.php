@@ -2,9 +2,9 @@
 
 namespace Uepg\LaravelSybase\Database\Schema;
 
-use Illuminate\Database\Schema\Grammars\Grammar as IlluminateGrammar;
-use Uepg\LaravelSybase\Database\Schema\Blueprint;
 use Uepg\LaravelSybase\Support\Fluent;
+use Uepg\LaravelSybase\Database\Schema\Blueprint;
+use Illuminate\Database\Schema\Grammars\Grammar as IlluminateGrammar;
 
 class Grammar extends IlluminateGrammar
 {
@@ -33,6 +33,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Verify if $str length is lower to 30 characters.
      *
+     * @param  string  $str
      * @return string
      */
     public function limit30Characters($str)
@@ -596,7 +597,7 @@ class Grammar extends IlluminateGrammar
     protected function modifyDefault(Blueprint $blueprint, Fluent $column)
     {
         if (!is_null($column->default)) {
-            return " default " . $this->getDefaultValue($column->default);
+            return ' default ' . $this->getDefaultValue($column->default);
         }
     }
 

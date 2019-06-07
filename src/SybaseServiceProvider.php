@@ -2,10 +2,10 @@
 
 namespace Uepg\LaravelSybase;
 
-use Illuminate\Database\Connection as IlluminateConnection;
 use Illuminate\Support\ServiceProvider;
-use Uepg\LaravelSybase\Database\Connection as SybaseConnection;
 use Uepg\LaravelSybase\Database\Connector;
+use Illuminate\Database\Connection as IlluminateConnection;
+use Uepg\LaravelSybase\Database\Connection as SybaseConnection;
 
 class SybaseServiceProvider extends ServiceProvider
 {

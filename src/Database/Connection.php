@@ -2,15 +2,15 @@
 
 namespace Uepg\LaravelSybase\Database;
 
+use PDO;
 use Closure;
 use Exception;
-use PDO;
-use Illuminate\Database\Connection as IlluminateConnection;
-use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Illuminate\Database\Query\Builder;
-use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
 use Uepg\LaravelSybase\Database\Query\Processor;
 use Uepg\LaravelSybase\Database\Schema\Blueprint;
+use Illuminate\Database\Connection as IlluminateConnection;
+use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
+use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
 use Uepg\LaravelSybase\Database\Schema\Grammar as SchemaGrammar;
 
 class Connection extends IlluminateConnection
@@ -51,21 +51,27 @@ class Connection extends IlluminateConnection
         if ($this->getDriverName() === 'sqlsrv') {
             return parent::transaction($callback);
         }
+
         $this->pdo->exec('BEGIN TRAN');
+
         // We'll simply execute the given callback within a try / catch block
         // and if we catch any exception we can rollback the transaction
         // so that none of the changes are persisted to the database.
         try {
             $result = $callback($this);
+
             $this->pdo->exec('COMMIT TRAN');
         }
+
         // If we catch an exception, we will roll back so nothing gets messed
         // up in the database. Then we'll re-throw the exception so it can
         // be handled how the developer sees fit for their applications.
         catch (Exception $e) {
             $this->pdo->exec('ROLLBACK TRAN');
+
             throw $e;
         }
+
         return $result;
     }
 
@@ -109,32 +115,48 @@ class Connection extends IlluminateConnection
         return new DoctrineDriver;
     }
 
+    /**
+     * Compile for select.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $builder
+     * @param  array  $bindings
+     * @return array
+     */
     private function compileForSelect(Builder $builder, $bindings) {
         $arrTables = [];
+
         array_push($arrTables, $builder->from);
+
         if (!empty($builder->joins)) {
             foreach ($builder->joins as $join) {
                 array_push($arrTables, $join->table);
             }
         }
+
         $newFormat = [];
+
         foreach ($arrTables as $tables) {
             preg_match(
                 "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
                 $tables,
                 $alias
             );
+
             if (empty($alias['alias'])) {
                 $tables = $alias['tables'];
             } else {
                 $tables = $alias['table'];
             }
+
             $queryString = $this->queryStringForSelect($tables);
+
             $queryRes = $this->getPdo()->query($queryString);
+
             $types[$tables] = $queryRes->fetchAll(PDO::FETCH_NAMED);
 
             foreach ($types[$tables] as &$row) {
                 $tipos[strtolower($row['name'])] = $row['type'];
+
                 $tipos[strtolower($tables . '.' . $row['name'])] = $row['type'];
 
                 if (!empty($alias['alias'])) {
@@ -148,7 +170,7 @@ class Connection extends IlluminateConnection
 
             foreach ($builder->wheres as $w) {
                 switch ($w['type']) {
-                    case "Nested":
+                    case 'Nested':
                         $wheres += $w['query']->wheres;
                         break;
                     default:
@@ -158,6 +180,7 @@ class Connection extends IlluminateConnection
             }
 
             $i = 0;
+
             $wheresCount = count($wheres);
 
             for ($ind = 0; $ind < $wheresCount; $ind++) {
@@ -182,6 +205,7 @@ class Connection extends IlluminateConnection
                         } else {
                             $newBinds[$i] = (string) $bindings[$i];
                         }
+
                         $i++;
                     }
                 }
@@ -191,7 +215,9 @@ class Connection extends IlluminateConnection
         }
 
         $wheres = (array) $builder->wheres;
+
         $i = 0;
+
         $wheresCount = count($wheres);
 
         for ($ind = 0; $ind < $wheresCount; $ind++) {
@@ -213,6 +239,7 @@ class Connection extends IlluminateConnection
                     } else {
                         $newBinds[$i] = (string) $bindings[$i];
                     }
+
                     $i++;
                 }
             }
@@ -221,9 +248,16 @@ class Connection extends IlluminateConnection
         return $newBinds;
     }
 
+    /**
+     * Query string for select.
+     *
+     * @param  string  $tables
+     * @return string
+     */
     private function queryStringForSelect($tables)
     {
         $explicitDB = explode('..', $tables);
+
         if (isset($explicitDB[1])) {
             return "
                 SELECT
@@ -281,8 +315,8 @@ class Connection extends IlluminateConnection
      * Set new bindings with specified column types to Sybase.
      *
      * @param  string  $query
-     * @param  array   $bindings
-     * @return mixed   $newBinds
+     * @param  array  $bindings
+     * @return mixed  $newBinds
      */
     private function compileBindings($query, $bindings)
     {
@@ -291,31 +325,32 @@ class Connection extends IlluminateConnection
         }
 
         $bindings = $this->prepareBindings($bindings);
+
         $newFormat = [];
 
         switch (explode(' ', $query)[0]) {
-            case "select":
+            case 'select':
                 $builder = $this->queryGrammar->getBuilder();
                 if ($builder != NULL && $builder->wheres != NULL) {
                     return $this->compileForSelect($builder, $bindings);
                 } else {
                     return $bindings;
                 }
-            case "insert":
+            case 'insert':
                 preg_match(
                     "/(?'tables'.*) \((?'attributes'.*)\) values/i",
                     $query,
                     $matches
                 );
                 break;
-            case "update":
+            case 'update':
                 preg_match(
                     "/(?'tables'.*) set (?'attributes'.*)/i",
                     $query,
                     $matches
                 );
                 break;
-            case "delete":
+            case 'delete':
                 preg_match(
                     "/(?'tables'.*) where (?'attributes'.*)/i",
                     $query,
@@ -335,13 +370,17 @@ class Connection extends IlluminateConnection
         if (is_array($desQuery['tables'])) {
             $desQuery['tables'] = implode($desQuery['tables'], ' ');
         }
+
         if (is_array($desQuery['attributes'])) {
             $desQuery['attributes'] = implode($desQuery['attributes'], ' ');
         }
 
         unset($matches);
+
         unset($queryType);
+
         preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
+
         preg_match_all(
             "/\[([^\]]*)\]/",
             str_replace("].[].[", '..', $desQuery['tables']),
@@ -349,8 +388,11 @@ class Connection extends IlluminateConnection
         );
 
         $arrQuery = $arrQuery[1];
+
         $arrTables = $arrTables[1];
+
         $ind = 0;
+
         $numTables = count($arrTables);
 
         if ($numTables == 1) {
@@ -366,17 +408,22 @@ class Connection extends IlluminateConnection
                 if ($numTables > 1) {
                     $table = $campos;
                 }
+
                 if (!array_key_exists($table, $newFormat)) {
                     $queryRes = $this->getPdo()->query(
                         $this->queryStringForCompileBindings($table)
                     );
+
                     $types[$table] = $queryRes->fetchAll(PDO::FETCH_ASSOC);
+
                     for ($k = 0; $k < count($types[$table]); $k++) {
                         $types[$table][
                             $types[$table][$k]['name']
                         ] = $types[$table][$k];
+
                         unset($types[$table][$k]);
                     }
+
                     $newFormat[$table] = [];
                 }
             }
@@ -389,6 +436,7 @@ class Connection extends IlluminateConnection
                             'binding' => $ind
                         ]
                     );
+
                     if (
                         in_array(
                             strtolower($types[$table][$campos]['type']),
@@ -406,6 +454,7 @@ class Connection extends IlluminateConnection
                 } else {
                     array_push($newFormat[$table], ['campo' => $campos]);
                 }
+
                 $ind++;
             }
         }
@@ -413,9 +462,16 @@ class Connection extends IlluminateConnection
         return $newBinds;
     }
 
+    /**
+     * Query string for compile bindings.
+     *
+     * @param  string  $table
+     * @return string
+     */
     private function queryStringForCompileBindings($table)
     {
         $explicitDB = explode('..', $table);
+
         if (isset($explicitDB[1])) {
             return "
                 SELECT
@@ -471,11 +527,11 @@ class Connection extends IlluminateConnection
 
     /**
      * Set new bindings with specified column types to Sybase.
-     * Poderia compilar novamente dos bindings usando os PDO::PARAM, porém,
-     * não tem nenhuma constante que lide com decimais, logo, a única maneira
-     * seria colocando PDO::PARAM_STR, que colocaria plicas.
-     * Detalhes:
-     * http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
+     *
+     * It could compile again from bindings using PDO::PARAM, however, it has
+     * no constants that deal with decimals, so the only way would be to put
+     * PDO::PARAM_STR, which would put quotes.
+     * @link http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
      *
      * @param  string  $query
      * @param  array  $bindings
@@ -483,14 +539,19 @@ class Connection extends IlluminateConnection
     */
     private function compileNewQuery($query, $bindings)
     {
-        $newQuery = "";
+        $newQuery = '';
+
         $bindings = $this->compileBindings($query, $bindings);
+
         $partQuery = explode("?", $query);
+
         for ($i = 0; $i < count($partQuery); $i++) {
             $newQuery .= $partQuery[$i];
+
             if ($i < count($bindings)) {
                 if (is_string($bindings[$i])) {
                     $bindings[$i] = str_replace("'", "''", $bindings[$i]);
+
                     $newQuery .= "'" . $bindings[$i] . "'";
                 } else {
                     if (!is_null($bindings[$i])) {
@@ -501,45 +562,68 @@ class Connection extends IlluminateConnection
                 }
             }
         }
-        $newQuery = str_replace( "[]", '', $newQuery);
+
+        $newQuery = str_replace( '[]', '', $newQuery);
+
         return $newQuery;
     }
 
-    public function compileOffset($offset, $query, $bindings = array(), $me)
+    /**
+     * Compile offset.
+     *
+     * @param  int  $offset
+     * @param  string  $query
+     * @param  array  $bindings
+     * @param  \Uepg\LaravelSybase\Database\Connection  $me
+     * @return string
+     */
+    public function compileOffset($offset, $query, $bindings = [], $me)
     {
         $limit = $this->queryGrammar->getBuilder()->limit;
-        $from = explode(" ", $this->queryGrammar->getBuilder()->from)[0];
+
+        $from = explode(' ', $this->queryGrammar->getBuilder()->from)[0];
+
         if (!isset($limit)) {
             $limit = 999999999999999999999999999;
         }
+
         $queryString = $this->queryStringForIdentity($from);
+
         $identity = $this->getPdo()->query($queryString)->fetchAll(
             $me->getFetchMode()
         )[0];
 
         if (count((array)$identity) === 0) {
             $queryString = $this->queryStringForPrimaries($from);
+
             $primaries = $this->getPdo()->query($queryString)->fetchAll(
                 $me->getFetchMode()
             );
+
             foreach ($primaries as $primary) {
                 $newArr[] = $primary->primary_key . '+0 AS ' .
                     $primary->primary_key;
+
                 $whereArr[] = "#tmpPaginate." . $primary->primary_key .
                     ' = #tmpTable.' . $primary->primary_key;
             }
+
             $resPrimaries = implode(', ', $newArr);
+
             $wherePrimaries = implode(' AND ', $whereArr);
         } else {
             $resPrimaries = $identity->column . '+0 AS ' . $identity->column;
+
             $wherePrimaries = "#tmpPaginate." . $identity->column .
                 ' = #tmpTable.' . $identity->column;
+
             // Offset operation
             $this->getPdo()->query(str_replace(
-                " from ",
+                ' from ',
                 " into #tmpPaginate from ",
                 $this->compileNewQuery($query, $bindings)
             ));
+
             $this->getPdo()->query("
                 SELECT
                     " . $resPrimaries . ",
@@ -548,6 +632,7 @@ class Connection extends IlluminateConnection
                     #tmpTable
                 FROM
                     #tmpPaginate");
+
             return $this->getPdo()->query("
                 SELECT
                     #tmpPaginate.*,
@@ -566,9 +651,16 @@ class Connection extends IlluminateConnection
         }
     }
 
+    /**
+     * Query string for identity.
+     *
+     * @param  string  $from
+     * @return string
+     */
     private function queryStringForIdentity($from)
     {
         $explicitDB = explode('..', $from);
+
         if (isset($explicitDB[1])) {
             return "
                 SELECT
@@ -594,9 +686,16 @@ class Connection extends IlluminateConnection
         }
     }
 
+    /**
+     * Query string for primaries.
+     *
+     * @param  string  $from
+     * @return string
+     */
     private function queryStringForPrimaries($from)
     {
         $explicitDB = explode('..', $from);
+
         if (isset($explicitDB[1])) {
             return "
                 SELECT
@@ -638,7 +737,7 @@ class Connection extends IlluminateConnection
      * @param  bool  $useReadPdo
      * @return array
     */
-    public function select($query, $bindings = array(), $useReadPdo = true)
+    public function select($query, $bindings = [], $useReadPdo = true)
     {
         return $this->run($query, $bindings, function (
             $query,
@@ -658,29 +757,35 @@ class Connection extends IlluminateConnection
                 return $this->compileOffset($offset, $query, $bindings, $this);
             } else {
                 $result = [];
+
                 $statement = $this->getPdo()->query($this->compileNewQuery(
                     $query,
                     $bindings
                 ));
+
                 do {
                     $result += $statement->fetchAll($this->getFetchMode());
                 } while ($statement->nextRowset());
+
                 return $result;
             }
         });
     }
 
     /**
+     * Get the statement.
+     *
      * @param  string  $query
-     * @param  mixed array   $bindings
+     * @param  mixed|array   $bindings
      * @return bool
      */
-    public function statement($query, $bindings = array())
+    public function statement($query, $bindings = [])
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
             if ($this->pretending()) {
                 return true;
             }
+
             return $this->getPdo()->query($this->compileNewQuery(
                 $query,
                 $bindings
@@ -688,12 +793,20 @@ class Connection extends IlluminateConnection
         });
     }
 
+    /**
+     * Affecting statement.
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     * @return int
+     */
     public function affectingStatement($query, $bindings = [])
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
             if ($this->pretending()) {
                 return 0;
             }
+
             return $this->getPdo()->query($this->compileNewQuery(
                 $query,
                 $bindings
@@ -712,17 +825,22 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * @return \Uepg\LaravelSybase\Database\Query\Builder
+     * Get SchemaBuilder.
+     *
+     * @return \Illuminate\Database\Query\Builder
      */
     public function getSchemaBuilder()
     {
         if (is_null($this->schemaGrammar)) {
             $this->useDefaultSchemaGrammar();
         }
+
         $builder = new Builder($this);
+
         $builder->blueprintResolver(function ($table, $callback) {
             return new Blueprint($table, $callback);
         });
+
         return $builder;
     }
 }

@@ -19,8 +19,6 @@ Fix #48, it was breaking extension - @nunomazer
 It's not necessary, no new behavior, ref #48 - @nunomazer
 
 
-
-
 ## [2.2 (2019-05-13)](https://github.com/uepg/laravel-sybase/compare/2.1.2...2.2)
 
 Merge pull request [#47](https://github.com/uepg/laravel-sybase/pull/47) from afgloeden/master
