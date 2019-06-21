@@ -116,7 +116,7 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * Compile for select.
+     * Compile the bindings for select.
      *
      * @param  \Illuminate\Database\Query\Builder  $builder
      * @param  array  $bindings
@@ -148,15 +148,13 @@ class Connection extends IlluminateConnection
                 $tables = $alias['table'];
             }
 
+            // TODO: cache this query
             $queryString = $this->queryStringForSelect($tables);
-
             $queryRes = $this->getPdo()->query($queryString);
-
             $types[$tables] = $queryRes->fetchAll(PDO::FETCH_NAMED);
 
             foreach ($types[$tables] as &$row) {
                 $tipos[strtolower($row['name'])] = $row['type'];
-
                 $tipos[strtolower($tables . '.' . $row['name'])] = $row['type'];
 
                 if (!empty($alias['alias'])) {
@@ -170,7 +168,7 @@ class Connection extends IlluminateConnection
 
             foreach ($builder->wheres as $w) {
                 switch ($w['type']) {
-                    case 'Nested':
+                    case "Nested":
                         $wheres += $w['query']->wheres;
                         break;
                     default:
@@ -180,11 +178,13 @@ class Connection extends IlluminateConnection
             }
 
             $i = 0;
-
             $wheresCount = count($wheres);
 
             for ($ind = 0; $ind < $wheresCount; $ind++) {
-                if (
+                if ($wheres[$ind]['type'] == 'raw') {
+                    $newBinds[] = $bindings[$i];
+                    $i++;
+                } else if (
                     isset($wheres[$ind]['value']) &&
                     isset($tipos[strtolower($wheres[$ind]['column'])])
                 ) {
@@ -205,7 +205,6 @@ class Connection extends IlluminateConnection
                         } else {
                             $newBinds[$i] = (string) $bindings[$i];
                         }
-
                         $i++;
                     }
                 }
@@ -214,14 +213,22 @@ class Connection extends IlluminateConnection
             $newFormat[$tables] = [];
         }
 
+
+        /**
+         * Is this block duplicated? Need more tests will keep it
+         * commented to remember that a possible error could be related to
+         * this
+         */
+        /**
         $wheres = (array) $builder->wheres;
-
         $i = 0;
-
         $wheresCount = count($wheres);
 
         for ($ind = 0; $ind < $wheresCount; $ind++) {
-            if (isset($wheres[$ind]['value'])) {
+            if ($wheres[$ind]['type'] == 'raw') {
+                $newBinds[] = $bindings[$i];
+                $i++;
+            } else if (isset($wheres[$ind]['value'])) {
                 if (is_object($wheres[$ind]['value']) === false) {
                     if (
                         in_array(
@@ -239,11 +246,11 @@ class Connection extends IlluminateConnection
                     } else {
                         $newBinds[$i] = (string) $bindings[$i];
                     }
-
                     $i++;
                 }
             }
         }
+         */
 
         return $newBinds;
     }
