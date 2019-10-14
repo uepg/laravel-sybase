@@ -1,4 +1,4 @@
-# Sybase ASE based Eloquent module extension for Laravel 5.x
+# Sybase ASE based Eloquent module extension for Laravel 6.x
 
 [![Packagist Version](https://img.shields.io/packagist/v/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase)
 [![PHP from Packagist](https://img.shields.io/packagist/php-v/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase)
