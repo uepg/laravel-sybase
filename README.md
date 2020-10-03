@@ -1,4 +1,4 @@
-# Sybase ASE based Eloquent module extension for Laravel 6.x
+# Sybase ASE based Eloquent module extension for Laravel 5.x
 
 [![Packagist Version](https://img.shields.io/packagist/v/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase)
 [![PHP from Packagist](https://img.shields.io/packagist/php-v/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase)
@@ -19,7 +19,7 @@ Add the following in the require section of your **composer.json**:
 ```json
 "uepg/laravel-sybase": "~1.0"
 ```
-### Laravel 5.4, 5.5, 5.6, 5.7, 5.8, 6.x, 7.x
+### Laravel 5.4, 5.5, 5.6, 5.7, 5.8, 6.x, 7.x, 8.x
 
 ```json
 "uepg/laravel-sybase": "~2.0"
