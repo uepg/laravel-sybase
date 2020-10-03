@@ -30,7 +30,8 @@ class Grammar extends IlluminateGrammar
      *
      * @return \Illuminate\Database\Query\Builder
      */
-    public function getBuilder(){
+    public function getBuilder()
+    {
         return $this->builder;
     }
 
@@ -58,7 +59,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileColumns(Builder $query, $columns)
     {
-        if (!is_null($query->aggregate)) {
+        if (! is_null($query->aggregate)) {
             return;
         }
 
@@ -69,10 +70,10 @@ class Grammar extends IlluminateGrammar
         // within the SQL Server system similar to the limit keywords available
         // in MySQL.
         if ($query->limit > 0 && $query->offset <= 0) {
-            $select .= 'top ' . $query->limit . ' ';
+            $select .= 'top '.$query->limit.' ';
         }
 
-        return $select . $this->columnize($columns);
+        return $select.$this->columnize($columns);
     }
 
     /**
@@ -87,12 +88,12 @@ class Grammar extends IlluminateGrammar
         $from = parent::compileFrom($query, $table);
 
         if (is_string($query->lock)) {
-            return $from . ' ' . $query->lock;
+            return $from.' '.$query->lock;
         }
 
-        if (!is_null($query->lock)) {
-            return $from . ' with(rowlock,' .
-                ($query->lock ? 'updlock,' : '') . 'holdlock)';
+        if (! is_null($query->lock)) {
+            return $from.' with(rowlock,'.
+                ($query->lock ? 'updlock,' : '').'holdlock)';
         }
 
         return $from;
@@ -131,7 +132,7 @@ class Grammar extends IlluminateGrammar
     public function compileTruncate(Builder $query)
     {
         return [
-            'truncate table ' . $this->wrapTable($query->from) => []
+            'truncate table '.$this->wrapTable($query->from) => [],
         ];
     }
 
@@ -157,6 +158,6 @@ class Grammar extends IlluminateGrammar
             return $value;
         }
 
-        return '[' . str_replace(']', ']]', $value) . ']';
+        return '['.str_replace(']', ']]', $value).']';
     }
 }
