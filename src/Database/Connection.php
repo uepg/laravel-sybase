@@ -154,11 +154,11 @@ class Connection extends IlluminateConnection
             $types[$tables] = $queryRes->fetchAll(PDO::FETCH_NAMED);
 
             foreach ($types[$tables] as &$row) {
-                $tipos[strtolower($row['name'])] = $row['type'];
-                $tipos[strtolower($tables . '.' . $row['name'])] = $row['type'];
+                $types[strtolower($row['name'])] = $row['type'];
+                $types[strtolower($tables . '.' . $row['name'])] = $row['type'];
 
                 if (!empty($alias['alias'])) {
-                    $tipos[
+                    $types[
                         strtolower($alias['alias'] . '.' . $row['name'])
                     ] = $row['type'];
                 }
@@ -186,12 +186,12 @@ class Connection extends IlluminateConnection
                     $i++;
                 } else if (
                     isset($wheres[$ind]['value']) &&
-                    isset($tipos[strtolower($wheres[$ind]['column'])])
+                    isset($types[strtolower($wheres[$ind]['column'])])
                 ) {
                     if (is_object($wheres[$ind]['value']) === false) {
                         if (
                             in_array(
-                                strtolower($tipos[
+                                strtolower($types[
                                     strtolower($wheres[$ind]['column'])
                                 ]),
                                 $this->withoutQuotes
