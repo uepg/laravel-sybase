@@ -432,7 +432,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a numeric type.
      *
-     * @param \Uepg\LaravelSybase\Support\Fluent $column
+     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
      * @return string
      */
     protected function typeNumeric(Fluent $column)
