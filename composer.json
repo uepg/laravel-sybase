@@ -1,5 +1,5 @@
 {
-    "name": "uepg/laravel-sybase",
+    "name": "jcrodriguezt/laravel-sybase",
     "description": "Sybase based Eloquent module extension for Laravel > 7.x.",
     "keywords": [
         "sybase"
