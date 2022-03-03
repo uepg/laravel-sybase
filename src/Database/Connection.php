@@ -573,7 +573,7 @@ class Connection extends IlluminateConnection
      * @param  \Uepg\LaravelSybase\Database\Connection  $me
      * @return string
      */
-    public function compileOffset($offset, $query, $bindings = [], $me)
+    public function compileOffset($offset, $query, $bindings = [], $me = null)
     {
         $limit = $this->queryGrammar->getBuilder()->limit;
 
