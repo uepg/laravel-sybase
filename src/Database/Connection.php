@@ -138,9 +138,9 @@ class Connection extends IlluminateConnection
 
         foreach ($arrTables as $tables) {
             preg_match(
-                "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
-                $tables,
-                $alias
+                    "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
+                    $tables,
+                    $alias
             );
 
             if (empty($alias['alias'])) {
@@ -160,17 +160,20 @@ class Connection extends IlluminateConnection
 
                 if (! empty($alias['alias'])) {
                     $types[
-                        strtolower($alias['alias'].'.'.$row['name'])
-                    ] = $row['type'];
+                            strtolower($alias['alias'].'.'.$row['name'])
+                            ] = $row['type'];
                 }
             }
 
             $wheres = [];
 
-            foreach ($builder->wheres as $w) {
+            foreach ($builder->wheres as $key => $w) {
                 switch ($w['type']) {
                     case 'Nested':
-                        $wheres += $w['query']->wheres;
+//                        $wheres += $w['query']->wheres;
+                        foreach ($w['query']->wheres as $nestedWhere) {
+                            array_push($wheres, $nestedWhere);
+                        }
                         break;
                     default:
                         array_push($wheres, $w);
@@ -186,17 +189,40 @@ class Connection extends IlluminateConnection
                     $newBinds[] = $bindings[$i];
                     $i++;
                 } elseif (
-                    isset($wheres[$ind]['value']) &&
-                    isset($types[strtolower($wheres[$ind]['column'])])
+                        isset($wheres[$ind]['value']) &&
+                        isset($types[strtolower($wheres[$ind]['column'])])
                 ) {
                     if (is_object($wheres[$ind]['value']) === false) {
                         if (
-                            in_array(
-                                strtolower($types[
-                                    strtolower($wheres[$ind]['column'])
-                                ]),
-                                $this->withoutQuotes
-                            )
+                                in_array(
+                                        strtolower($types[
+                                                strtolower($wheres[$ind]['column'])
+                                        ]),
+                                        $this->withoutQuotes
+                                )
+                        ) {
+                            if (! is_null($bindings[$i])) {
+                                $newBinds[$i] = $bindings[$i] / 1;
+                            } else {
+                                $newBinds[$i] = null;
+                            }
+                        } else {
+                            $newBinds[$i] = (string) $bindings[$i];
+                        }
+                        $i++;
+                    }
+                } elseif (
+                        isset($wheres[$ind]['values']) &&
+                        isset($types[strtolower($wheres[$ind]['column'])])
+                ) {
+                    foreach ($wheres[$ind]['values'] as $value) {
+                        if (
+                                in_array(
+                                        strtolower($types[
+                                                strtolower($wheres[$ind]['column'])
+                                        ]),
+                                        $this->withoutQuotes
+                                )
                         ) {
                             if (! is_null($bindings[$i])) {
                                 $newBinds[$i] = $bindings[$i] / 1;
@@ -213,44 +239,6 @@ class Connection extends IlluminateConnection
 
             $newFormat[$tables] = [];
         }
-
-        /**
-         * Is this block duplicated? Need more tests will keep it
-         * commented to remember that a possible error could be related to
-         * this.
-         */
-        /**
-         * $wheres = (array) $builder->wheres;
-         * $i = 0;
-         * $wheresCount = count($wheres);
-         *
-         * for ($ind = 0; $ind < $wheresCount; $ind++) {
-         * if ($wheres[$ind]['type'] == 'raw') {
-         * $newBinds[] = $bindings[$i];
-         * $i++;
-         * } else if (isset($wheres[$ind]['value'])) {
-         * if (is_object($wheres[$ind]['value']) === false) {
-         * if (
-         * in_array(
-         * strtolower($tipos[
-         * strtolower($wheres[$ind]['column'])
-         * ]),
-         * $this->withoutQuotes
-         * )
-         * ) {
-         * if (!is_null($bindings[$i])) {
-         * $newBinds[$i] = $bindings[$i] / 1;
-         * } else {
-         * $newBinds[$i] = null;
-         * }
-         * } else {
-         * $newBinds[$i] = (string) $bindings[$i];
-         * }
-         * $i++;
-         * }
-         * }
-         * }
-         */
 
         return $newBinds;
     }
@@ -323,7 +311,7 @@ class Connection extends IlluminateConnection
      *
      * @param  string  $query
      * @param  array  $bindings
-     * @return mixed  $newBinds
+     * @return mixed $newBinds
      */
     private function compileBindings($query, $bindings)
     {
@@ -345,23 +333,23 @@ class Connection extends IlluminateConnection
                 }
             case 'insert':
                 preg_match(
-                    "/(?'tables'.*) \((?'attributes'.*)\) values/i",
-                    $query,
-                    $matches
+                        "/(?'tables'.*) \((?'attributes'.*)\) values/i",
+                        $query,
+                        $matches
                 );
                 break;
             case 'update':
                 preg_match(
-                    "/(?'tables'.*) set (?'attributes'.*)/i",
-                    $query,
-                    $matches
+                        "/(?'tables'.*) set (?'attributes'.*)/i",
+                        $query,
+                        $matches
                 );
                 break;
             case 'delete':
                 preg_match(
-                    "/(?'tables'.*) where (?'attributes'.*)/i",
-                    $query,
-                    $matches
+                        "/(?'tables'.*) where (?'attributes'.*)/i",
+                        $query,
+                        $matches
                 );
                 break;
             default:
@@ -370,8 +358,8 @@ class Connection extends IlluminateConnection
         }
 
         $desQuery = array_intersect_key(
-            $matches,
-            array_flip(array_filter(array_keys($matches), 'is_string'))
+                $matches,
+                array_flip(array_filter(array_keys($matches), 'is_string'))
         );
 
         if (is_array($desQuery['tables'])) {
@@ -389,9 +377,9 @@ class Connection extends IlluminateConnection
         preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
 
         preg_match_all(
-            "/\[([^\]]*)\]/",
-            str_replace('].[].[', '..', $desQuery['tables']),
-            $arrTables
+                "/\[([^\]]*)\]/",
+                str_replace('].[].[', '..', $desQuery['tables']),
+                $arrTables
         );
 
         $arrQuery = $arrQuery[1];
@@ -418,15 +406,15 @@ class Connection extends IlluminateConnection
 
                 if (! array_key_exists($table, $newFormat)) {
                     $queryRes = $this->getPdo()->query(
-                        $this->queryStringForCompileBindings($table)
+                            $this->queryStringForCompileBindings($table)
                     );
 
                     $types[$table] = $queryRes->fetchAll(PDO::FETCH_ASSOC);
 
                     for ($k = 0; $k < count($types[$table]); $k++) {
                         $types[$table][
-                            $types[$table][$k]['name']
-                        ] = $types[$table][$k];
+                                $types[$table][$k]['name']
+                                ] = $types[$table][$k];
 
                         unset($types[$table][$k]);
                     }
@@ -438,17 +426,17 @@ class Connection extends IlluminateConnection
             if (! $itsTable) {
                 if (count($bindings) > $ind) {
                     array_push(
-                        $newFormat[$table], [
-                            'campo' => $campos,
-                            'binding' => $ind,
-                        ]
+                            $newFormat[$table], [
+                                'campo' => $campos,
+                                'binding' => $ind,
+                            ]
                     );
 
                     if (
-                        in_array(
-                            strtolower($types[$table][$campos]['type']),
-                            $this->withoutQuotes
-                        )
+                            in_array(
+                                    strtolower($types[$table][$campos]['type']),
+                                    $this->withoutQuotes
+                            )
                     ) {
                         if (! is_null($bindings[$ind])) {
                             $newBinds[$ind] = $bindings[$ind] / 1;
@@ -538,6 +526,7 @@ class Connection extends IlluminateConnection
      * It could compile again from bindings using PDO::PARAM, however, it has
      * no constants that deal with decimals, so the only way would be to put
      * PDO::PARAM_STR, which would put quotes.
+     *
      * @link http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
      *
      * @param  string  $query
@@ -584,7 +573,7 @@ class Connection extends IlluminateConnection
      * @param  \Uepg\LaravelSybase\Database\Connection  $me
      * @return string
      */
-    public function compileOffset($offset, $query, $bindings = [], $me)
+    public function compileOffset($offset, $query, $bindings = [], $me = null)
     {
         $limit = $this->queryGrammar->getBuilder()->limit;
 
@@ -597,22 +586,22 @@ class Connection extends IlluminateConnection
         $queryString = $this->queryStringForIdentity($from);
 
         $identity = $this->getPdo()->query($queryString)->fetchAll(
-            $me->getFetchMode()
-        )[0];
+                        $me->getFetchMode()
+                )[0];
 
         if (count((array) $identity) === 0) {
             $queryString = $this->queryStringForPrimaries($from);
 
             $primaries = $this->getPdo()->query($queryString)->fetchAll(
-                $me->getFetchMode()
+                    $me->getFetchMode()
             );
 
             foreach ($primaries as $primary) {
                 $newArr[] = $primary->primary_key.'+0 AS '.
-                    $primary->primary_key;
+                        $primary->primary_key;
 
                 $whereArr[] = '#tmpPaginate.'.$primary->primary_key.
-                    ' = #tmpTable.'.$primary->primary_key;
+                        ' = #tmpTable.'.$primary->primary_key;
             }
 
             $resPrimaries = implode(', ', $newArr);
@@ -622,13 +611,13 @@ class Connection extends IlluminateConnection
             $resPrimaries = $identity->column.'+0 AS '.$identity->column;
 
             $wherePrimaries = '#tmpPaginate.'.$identity->column.
-                ' = #tmpTable.'.$identity->column;
+                    ' = #tmpTable.'.$identity->column;
 
             // Offset operation
             $this->getPdo()->query(str_replace(
-                ' from ',
-                ' into #tmpPaginate from ',
-                $this->compileNewQuery($query, $bindings)
+                            ' from ',
+                            ' into #tmpPaginate from ',
+                            $this->compileNewQuery($query, $bindings)
             ));
 
             $this->getPdo()->query('
@@ -747,9 +736,9 @@ class Connection extends IlluminateConnection
     public function select($query, $bindings = [], $useReadPdo = true)
     {
         return $this->run($query, $bindings, function (
-            $query,
-            $bindings
-        ) {
+                        $query,
+                        $bindings
+                ) {
             if ($this->pretending()) {
                 return [];
             }
@@ -766,9 +755,9 @@ class Connection extends IlluminateConnection
                 $result = [];
 
                 $statement = $this->getPdo()->query($this->compileNewQuery(
-                    $query,
-                    $bindings
-                ));
+                                        $query,
+                                        $bindings
+                        ));
 
                 do {
                     $result += $statement->fetchAll($this->getFetchMode());
@@ -783,7 +772,7 @@ class Connection extends IlluminateConnection
      * Get the statement.
      *
      * @param  string  $query
-     * @param  mixed|array   $bindings
+     * @param  mixed|array  $bindings
      * @return bool
      */
     public function statement($query, $bindings = [])
@@ -794,9 +783,9 @@ class Connection extends IlluminateConnection
             }
 
             return $this->getPdo()->query($this->compileNewQuery(
-                $query,
-                $bindings
-            ));
+                                    $query,
+                                    $bindings
+                    ));
         });
     }
 
@@ -815,9 +804,9 @@ class Connection extends IlluminateConnection
             }
 
             return $this->getPdo()->query($this->compileNewQuery(
-                $query,
-                $bindings
-            ))->rowCount();
+                                    $query,
+                                    $bindings
+                    ))->rowCount();
         });
     }
 
