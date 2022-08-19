@@ -1,6 +1,14 @@
 # Release Notes
 
-## [Unreleased](https://github.com/uepg/laravel-sybase/compare/2.2.3...master)
+## [2.6.0 (2022-08-19)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.5.5...2.6.0)
+
+Improvements in delete and insert statements when using array based clauses like whereIn, whereBetween, etc
+
+## [2.5.5 (2022-03-03)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.5.4...2.5.5)
+
+Added support for Laravel 9.x
+
+Fixed PHP deprecation warning on Connection.php in compileOffset function parameters
 
 ## [2.2.3 (2019-06-03)](https://github.com/uepg/laravel-sybase/compare/2.2.2...2.2.3)
 

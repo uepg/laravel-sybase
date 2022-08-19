@@ -1,14 +1,14 @@
 # Sybase ASE based Eloquent module extension for Laravel 
 
-[![Packagist Version](https://img.shields.io/packagist/v/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase)
-[![PHP from Packagist](https://img.shields.io/packagist/php-v/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase)
-[![Packagist](https://img.shields.io/packagist/dt/uepg/laravel-sybase.svg)](https://packagist.org/packages/uepg/laravel-sybase/stats)
-[![GitHub contributors](https://img.shields.io/github/contributors-anon/uepg/laravel-sybase.svg)](https://github.com/uepg/laravel-sybase/graphs/contributors)
-[![GitHub](https://img.shields.io/github/license/uepg/laravel-sybase.svg)](https://github.com/uepg/laravel-sybase/blob/master/LICENSE)
+[![Packagist Version](https://img.shields.io/packagist/v/jcrodriguezt/laravel-sybase.svg)](https://packagist.org/packages/jcrodriguezt/laravel-sybase)
+[![PHP from Packagist](https://img.shields.io/packagist/php-v/jcrodriguezt/laravel-sybase.svg)](https://packagist.org/packages/jcrodriguezt/laravel-sybase)
+[![Packagist](https://img.shields.io/packagist/dt/jcrodriguezt/laravel-sybase.svg)](https://packagist.org/packages/jcrodriguezt/laravel-sybase/stats)
+[![GitHub contributors](https://img.shields.io/github/contributors-anon/jcrodriguezt/laravel-sybase.svg)](https://github.com/jcrodriguezt/laravel-sybase/graphs/contributors)
+[![GitHub](https://img.shields.io/github/license/jcrodriguezt/laravel-sybase.svg)](https://github.com/jcrodriguezt/laravel-sybase/blob/master/LICENSE)
 
-* Enables use of multiple kinds of fields.
+* Original codebase https://github.com/uepg/laravel-sybase.
 * Use default eloquent: works with odbc and dblib!
-* Migrations! (WIP - Work in Progress)
+* Improvements in delete and insert statements when using array based clauses like whereIn, whereBetween, etc
 
 ## Install
 

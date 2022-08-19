@@ -12,9 +12,10 @@ use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
 use Uepg\LaravelSybase\Database\Query\Processor;
 use Uepg\LaravelSybase\Database\Schema\Blueprint;
 use Uepg\LaravelSybase\Database\Schema\Grammar as SchemaGrammar;
+use Str;
 
-class Connection extends IlluminateConnection
-{
+class Connection extends IlluminateConnection {
+
     /**
      * All types without quotes in Sybase's query.
      *
@@ -128,7 +129,7 @@ class Connection extends IlluminateConnection
 
         array_push($arrTables, $builder->from);
 
-        if (! empty($builder->joins)) {
+        if (!empty($builder->joins)) {
             foreach ($builder->joins as $join) {
                 array_push($arrTables, $join->table);
             }
@@ -156,11 +157,11 @@ class Connection extends IlluminateConnection
 
             foreach ($types[$tables] as &$row) {
                 $types[strtolower($row['name'])] = $row['type'];
-                $types[strtolower($tables.'.'.$row['name'])] = $row['type'];
+                $types[strtolower($tables . '.' . $row['name'])] = $row['type'];
 
-                if (! empty($alias['alias'])) {
+                if (!empty($alias['alias'])) {
                     $types[
-                            strtolower($alias['alias'].'.'.$row['name'])
+                            strtolower($alias['alias'] . '.' . $row['name'])
                             ] = $row['type'];
                 }
             }
@@ -197,11 +198,11 @@ class Connection extends IlluminateConnection
                                 in_array(
                                         strtolower($types[
                                                 strtolower($wheres[$ind]['column'])
-                                        ]),
+                                                ]),
                                         $this->withoutQuotes
                                 )
                         ) {
-                            if (! is_null($bindings[$i])) {
+                            if (!is_null($bindings[$i])) {
                                 $newBinds[$i] = $bindings[$i] / 1;
                             } else {
                                 $newBinds[$i] = null;
@@ -220,11 +221,11 @@ class Connection extends IlluminateConnection
                                 in_array(
                                         strtolower($types[
                                                 strtolower($wheres[$ind]['column'])
-                                        ]),
+                                                ]),
                                         $this->withoutQuotes
                                 )
                         ) {
-                            if (! is_null($bindings[$i])) {
+                            if (!is_null($bindings[$i])) {
                                 $newBinds[$i] = $bindings[$i] / 1;
                             } else {
                                 $newBinds[$i] = null;
@@ -322,7 +323,6 @@ class Connection extends IlluminateConnection
         $bindings = $this->prepareBindings($bindings);
 
         $newFormat = [];
-
         switch (explode(' ', $query)[0]) {
             case 'select':
                 $builder = $this->queryGrammar->getBuilder();
@@ -337,6 +337,7 @@ class Connection extends IlluminateConnection
                         $query,
                         $matches
                 );
+                $wheres = [];
                 break;
             case 'update':
                 preg_match(
@@ -344,6 +345,7 @@ class Connection extends IlluminateConnection
                         $query,
                         $matches
                 );
+                $wheres = explode('and', Str::after($matches[2], 'where '));
                 break;
             case 'delete':
                 preg_match(
@@ -351,17 +353,23 @@ class Connection extends IlluminateConnection
                         $query,
                         $matches
                 );
+                $wheres = explode('and', $matches[2]);
                 break;
             default:
                 return $bindings;
                 break;
         }
 
+        // We need to know how many bindings correspond to each field
+        $wheresCount = [];
+        foreach ($wheres as $k => $v) {
+            $wheresCount[Str::between($v, '[', ']')] = ['count' => substr_count($v, '?')];
+        }
+
         $desQuery = array_intersect_key(
                 $matches,
                 array_flip(array_filter(array_keys($matches), 'is_string'))
         );
-
         if (is_array($desQuery['tables'])) {
             $desQuery['tables'] = implode($desQuery['tables'], ' ');
         }
@@ -371,8 +379,14 @@ class Connection extends IlluminateConnection
         }
 
         unset($matches);
-
         unset($queryType);
+        unset($wheres);
+
+        //lets clean table names which are causing issues in update statements
+        if (Str::startsWith($desQuery['tables'], 'update')) {
+            $tablename = str_replace('update ', '', $desQuery['tables']) . '.';
+            $desQuery['attributes'] = str_replace($tablename, '', $desQuery['attributes']);
+        }
 
         preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
 
@@ -404,12 +418,14 @@ class Connection extends IlluminateConnection
                     $table = $campos;
                 }
 
-                if (! array_key_exists($table, $newFormat)) {
+                if (!array_key_exists($table, $newFormat)) {
                     $queryRes = $this->getPdo()->query(
                             $this->queryStringForCompileBindings($table)
                     );
 
-                    $types[$table] = $queryRes->fetchAll(PDO::FETCH_ASSOC);
+                    if (!isset($types[$table])) {
+                        $types[$table] = $queryRes->fetchAll(PDO::FETCH_ASSOC);
+                    }
 
                     for ($k = 0; $k < count($types[$table]); $k++) {
                         $types[$table][
@@ -423,28 +439,34 @@ class Connection extends IlluminateConnection
                 }
             }
 
-            if (! $itsTable) {
+            $wheresCount[$campos]['type'] = strtolower($types[$table][$campos]['type']);
+
+            if (!$itsTable) {
                 if (count($bindings) > $ind) {
                     array_push(
                             $newFormat[$table], [
-                                'campo' => $campos,
-                                'binding' => $ind,
+                        'campo' => $campos,
+                        'binding' => $ind,
                             ]
                     );
 
-                    if (
-                            in_array(
-                                    strtolower($types[$table][$campos]['type']),
-                                    $this->withoutQuotes
-                            )
-                    ) {
-                        if (! is_null($bindings[$ind])) {
-                            $newBinds[$ind] = $bindings[$ind] / 1;
-                        } else {
-                            $newBinds[$ind] = null;
+                    if (isset($wheresCount[$campos]['count'])) {
+                        for ($x = 0; $x < $wheresCount[$campos]['count']; $x++) {
+                            if (in_array(strtolower($types[$table][$campos]['type']), $this->withoutQuotes)) {
+                                if (!is_null($bindings[$ind])) {
+                                    $newBinds[$ind] = $bindings[$ind] / 1;
+                                } else {
+                                    $newBinds[$ind] = null;
+                                }
+                            } else {
+                                $newBinds[$ind] = (string) $bindings[$ind];
+                            }
+                            $ind++;
                         }
                     } else {
-                        $newBinds[$ind] = (string) $bindings[$ind];
+                        $newBinds[$ind] = $bindings[$ind] == null ? null : (
+                                (in_array(strtolower($types[$table][$campos]['type']), $this->withoutQuotes)) ? $bindings[$ind] / 1 : (string) $bindings[$ind]
+                                );
                     }
                 } else {
                     array_push($newFormat[$table], ['campo' => $campos]);
@@ -548,9 +570,9 @@ class Connection extends IlluminateConnection
                 if (is_string($bindings[$i])) {
                     $bindings[$i] = str_replace("'", "''", $bindings[$i]);
 
-                    $newQuery .= "'".$bindings[$i]."'";
+                    $newQuery .= "'" . $bindings[$i] . "'";
                 } else {
-                    if (! is_null($bindings[$i])) {
+                    if (!is_null($bindings[$i])) {
                         $newQuery .= $bindings[$i];
                     } else {
                         $newQuery .= 'null';
@@ -579,7 +601,7 @@ class Connection extends IlluminateConnection
 
         $from = explode(' ', $this->queryGrammar->getBuilder()->from)[0];
 
-        if (! isset($limit)) {
+        if (!isset($limit)) {
             $limit = 999999999999999999999999999;
         }
 
@@ -597,21 +619,21 @@ class Connection extends IlluminateConnection
             );
 
             foreach ($primaries as $primary) {
-                $newArr[] = $primary->primary_key.'+0 AS '.
+                $newArr[] = $primary->primary_key . '+0 AS ' .
                         $primary->primary_key;
 
-                $whereArr[] = '#tmpPaginate.'.$primary->primary_key.
-                        ' = #tmpTable.'.$primary->primary_key;
+                $whereArr[] = '#tmpPaginate.' . $primary->primary_key .
+                        ' = #tmpTable.' . $primary->primary_key;
             }
 
             $resPrimaries = implode(', ', $newArr);
 
             $wherePrimaries = implode(' AND ', $whereArr);
         } else {
-            $resPrimaries = $identity->column.'+0 AS '.$identity->column;
+            $resPrimaries = $identity->column . '+0 AS ' . $identity->column;
 
-            $wherePrimaries = '#tmpPaginate.'.$identity->column.
-                    ' = #tmpTable.'.$identity->column;
+            $wherePrimaries = '#tmpPaginate.' . $identity->column .
+                    ' = #tmpTable.' . $identity->column;
 
             // Offset operation
             $this->getPdo()->query(str_replace(
@@ -622,7 +644,7 @@ class Connection extends IlluminateConnection
 
             $this->getPdo()->query('
                 SELECT
-                    '.$resPrimaries.',
+                    ' . $resPrimaries . ',
                     idTmp=identity(18)
                 INTO
                     #tmpTable
@@ -638,10 +660,10 @@ class Connection extends IlluminateConnection
                 INNER JOIN
                     #tmpPaginate
                 ON
-                    '.$wherePrimaries.'
+                    ' . $wherePrimaries . '
                 WHERE
-                    #tmpTable.idTmp BETWEEN '.($offset + 1).' AND
-                    '.($offset + $limit).'
+                    #tmpTable.idTmp BETWEEN ' . ($offset + 1) . ' AND
+                    ' . ($offset + $limit) . '
                 ORDER BY
                     #tmpTable.idTmp ASC')->fetchAll($me->getFetchMode());
         }
@@ -662,14 +684,14 @@ class Connection extends IlluminateConnection
                 SELECT
                     b.name AS 'column'
                 FROM
-                    ".$explicitDB[0].'..syscolumns AS b
+                    " . $explicitDB[0] . '..syscolumns AS b
                 INNER JOIN
-                    '.$explicitDB[0]."..sysobjects AS a
+                    ' . $explicitDB[0] . "..sysobjects AS a
                 ON
                     a.id = b.id
                 WHERE
                     status & 128 = 128 AND
-                    a.name = '".$explicitDB[1]."'";
+                    a.name = '" . $explicitDB[1] . "'";
         } else {
             return "
                 SELECT
@@ -678,7 +700,7 @@ class Connection extends IlluminateConnection
                     syscolumns
                 WHERE
                     status & 128 = 128 AND
-                    object_name (id) = '".$from."'";
+                    object_name (id) = '" . $from . "'";
         }
     }
 
@@ -696,22 +718,22 @@ class Connection extends IlluminateConnection
             return '
                 SELECT
                     index_col (
-                        '.$from.',
+                        ' . $from . ',
                         i.indid,
                         c.colid
                     ) AS primary_key
                 FROM
-                    '.$explicitDB[0].'..sysindexes i,
-                    '.$explicitDB[0]."..syscolumns c
+                    ' . $explicitDB[0] . '..sysindexes i,
+                    ' . $explicitDB[0] . "..syscolumns c
                 WHERE
                     i.id = c.id AND
                     c.colid <= i.keycnt AND
-                    i.id = object_id ('".$from."')";
+                    i.id = object_id ('" . $from . "')";
         } else {
             return '
                 SELECT
                     index_col (
-                        '.$from.",
+                        ' . $from . ",
                         i.indid,
                         c.colid
                     ) AS primary_key
@@ -721,7 +743,7 @@ class Connection extends IlluminateConnection
                 WHERE
                     i.id = c.id AND
                     c.colid <= i.keycnt AND
-                    i.id = object_id ('".$from."')";
+                    i.id = object_id ('" . $from . "')";
         }
     }
 
@@ -739,33 +761,33 @@ class Connection extends IlluminateConnection
                         $query,
                         $bindings
                 ) {
-            if ($this->pretending()) {
-                return [];
-            }
+                    if ($this->pretending()) {
+                        return [];
+                    }
 
-            if ($this->queryGrammar->getBuilder() != null) {
-                $offset = $this->queryGrammar->getBuilder()->offset;
-            } else {
-                $offset = 0;
-            }
+                    if ($this->queryGrammar->getBuilder() != null) {
+                        $offset = $this->queryGrammar->getBuilder()->offset;
+                    } else {
+                        $offset = 0;
+                    }
 
-            if ($offset > 0) {
-                return $this->compileOffset($offset, $query, $bindings, $this);
-            } else {
-                $result = [];
+                    if ($offset > 0) {
+                        return $this->compileOffset($offset, $query, $bindings, $this);
+                    } else {
+                        $result = [];
 
-                $statement = $this->getPdo()->query($this->compileNewQuery(
+                        $statement = $this->getPdo()->query($this->compileNewQuery(
                                         $query,
                                         $bindings
                         ));
 
-                do {
-                    $result += $statement->fetchAll($this->getFetchMode());
-                } while ($statement->nextRowset());
+                        do {
+                            $result += $statement->fetchAll($this->getFetchMode());
+                        } while ($statement->nextRowset());
 
-                return $result;
-            }
-        });
+                        return $result;
+                    }
+                });
     }
 
     /**
@@ -778,15 +800,15 @@ class Connection extends IlluminateConnection
     public function statement($query, $bindings = [])
     {
         return $this->run($query, $bindings, function ($query, $bindings) {
-            if ($this->pretending()) {
-                return true;
-            }
+                    if ($this->pretending()) {
+                        return true;
+                    }
 
-            return $this->getPdo()->query($this->compileNewQuery(
+                    return $this->getPdo()->query($this->compileNewQuery(
                                     $query,
                                     $bindings
                     ));
-        });
+                });
     }
 
     /**
@@ -798,16 +820,17 @@ class Connection extends IlluminateConnection
      */
     public function affectingStatement($query, $bindings = [])
     {
-        return $this->run($query, $bindings, function ($query, $bindings) {
-            if ($this->pretending()) {
-                return 0;
-            }
+        return $this->run($query, $bindings, function ($query, $bindings) 
+		{
+                    if ($this->pretending()) {
+                        return 0;
+                    }
 
-            return $this->getPdo()->query($this->compileNewQuery(
+                    return $this->getPdo()->query($this->compileNewQuery(
                                     $query,
                                     $bindings
-                    ))->rowCount();
-        });
+                            ))->rowCount();
+                });
     }
 
     /**
@@ -839,4 +862,5 @@ class Connection extends IlluminateConnection
 
         return $builder;
     }
+
 }
