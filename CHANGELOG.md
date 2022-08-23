@@ -1,5 +1,9 @@
 # Release Notes
 
+## [2.6.1 (2022-08-22)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.0...2.6.1)
+
+Bugfixes to 2.6.0 implementation
+
 ## [2.6.0 (2022-08-19)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.5.5...2.6.0)
 
 Improvements in delete and insert statements when using array based clauses like whereIn, whereBetween, etc

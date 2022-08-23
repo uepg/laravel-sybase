@@ -150,10 +150,11 @@ class Connection extends IlluminateConnection {
                 $tables = $alias['table'];
             }
 
-            // TODO: cache this query
             $queryString = $this->queryStringForSelect($tables);
             $queryRes = $this->getPdo()->query($queryString);
-            $types[$tables] = $queryRes->fetchAll(PDO::FETCH_NAMED);
+			if (!isset($types[$tables])){
+				$types[$tables] = $queryRes->fetchAll(PDO::FETCH_NAMED);
+			}
 
             foreach ($types[$tables] as &$row) {
                 $types[strtolower($row['name'])] = $row['type'];
@@ -171,7 +172,6 @@ class Connection extends IlluminateConnection {
             foreach ($builder->wheres as $key => $w) {
                 switch ($w['type']) {
                     case 'Nested':
-//                        $wheres += $w['query']->wheres;
                         foreach ($w['query']->wheres as $nestedWhere) {
                             array_push($wheres, $nestedWhere);
                         }
@@ -252,6 +252,11 @@ class Connection extends IlluminateConnection {
      */
     private function queryStringForSelect($tables)
     {
+		if (substr_count($tables, '.') == 2 && !substr_count($tables, '..')) {
+            $pos1 = strpos($tables, '.');
+            $pos2 = strpos($tables, '.', $pos1 + 1);
+            $tables = substr($tables, 0, $pos1) . '..' . substr($tables, $pos2 + 1);
+        }
         $explicitDB = explode('..', $tables);
 
         if (isset($explicitDB[1])) {
@@ -450,7 +455,7 @@ class Connection extends IlluminateConnection {
                             ]
                     );
 
-                    if (isset($wheresCount[$campos]['count'])) {
+                    if (isset($wheresCount[$campos]['count']) && $wheresCount[$campos]['count'] > 1) {
                         for ($x = 0; $x < $wheresCount[$campos]['count']; $x++) {
                             if (in_array(strtolower($types[$table][$campos]['type']), $this->withoutQuotes)) {
                                 if (!is_null($bindings[$ind])) {
@@ -461,7 +466,9 @@ class Connection extends IlluminateConnection {
                             } else {
                                 $newBinds[$ind] = (string) $bindings[$ind];
                             }
-                            $ind++;
+							if (($x + 1) < $wheresCount[$campos]['count']) {
+								$ind++;
+							}
                         }
                     } else {
                         $newBinds[$ind] = $bindings[$ind] == null ? null : (
@@ -487,6 +494,11 @@ class Connection extends IlluminateConnection {
      */
     private function queryStringForCompileBindings($table)
     {
+		if (substr_count($tables, '.') == 2 && !substr_count($tables, '..')) {
+            $pos1 = strpos($tables, '.');
+            $pos2 = strpos($tables, '.', $pos1 + 1);
+            $tables = substr($tables, 0, $pos1) . '..' . substr($tables, $pos2 + 1);
+        }
         $explicitDB = explode('..', $table);
 
         if (isset($explicitDB[1])) {
