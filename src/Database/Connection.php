@@ -494,10 +494,10 @@ class Connection extends IlluminateConnection
      */
     private function queryStringForCompileBindings($table)
     {
-        if (substr_count($tables, '.') == 2 && ! substr_count($tables, '..')) {
-            $pos1 = strpos($tables, '.');
-            $pos2 = strpos($tables, '.', $pos1 + 1);
-            $tables = substr($tables, 0, $pos1).'..'.substr($tables, $pos2 + 1);
+		if (substr_count($table, '.') == 2 && !substr_count($table, '..')) {
+            $pos1 = strpos($table, '.');
+            $pos2 = strpos($table, '.', $pos1 + 1);
+            $table = substr($table, 0, $pos1) . '..' . substr($table, $pos2 + 1);
         }
         $explicitDB = explode('..', $table);
 
