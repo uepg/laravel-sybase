@@ -225,10 +225,12 @@ class Connection extends IlluminateConnection
                                         $this->withoutQuotes
                                 )
                         ) {
-                            if (! is_null($bindings[$i])) {
-                                $newBinds[$i] = $bindings[$i] / 1;
-                            } else {
-                                $newBinds[$i] = null;
+							if(isset($bindings[$i])){
+                                if (! is_null($bindings[$i])) {
+                                    $newBinds[$i] = $bindings[$i] / 1;
+                                } else {
+                                    $newBinds[$i] = null;
+                                }
                             }
                         } else {
                             $newBinds[$i] = (string) $bindings[$i];

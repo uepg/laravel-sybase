@@ -1,6 +1,10 @@
 # Release Notes
 
-## [2.6.1 (2022-08-22)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.1...2.6.2)
+## [2.6.3 (2022-08-22)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.2...2.6.3)
+
+Bugfix to 2.6.2 implementation.
+
+## [2.6.2 (2022-08-22)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.1...2.6.2)
 
 Bugfix to 2.6.1 implementation. There was a typo in $table variable inside function queryStringForCompileBindings.
 
