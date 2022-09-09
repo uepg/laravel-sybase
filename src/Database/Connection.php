@@ -473,7 +473,7 @@ class Connection extends IlluminateConnection
                             }
                         }
                     } else {
-                        $newBinds[$ind] = $bindings[$ind] == null ? null : (
+                        $newBinds[$ind] = $bindings[$ind] === null ? null : (
                                 (in_array(strtolower($types[$table][$campos]['type']), $this->withoutQuotes)) ? $bindings[$ind] / 1 : (string) $bindings[$ind]
                                 );
                     }

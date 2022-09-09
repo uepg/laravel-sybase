@@ -1,5 +1,9 @@
 # Release Notes
 
+## [2.6.4 (2022-09-09)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.3...2.6.4)
+
+Bugfix to 2.6.3 implementation.
+
 ## [2.6.3 (2022-08-22)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.2...2.6.3)
 
 Bugfix to 2.6.2 implementation.
