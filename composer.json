@@ -7,17 +7,23 @@
     "license": "GPL-2.0-only",
     "authors": [
         {
+            "name": "Julio C. Rodriguez",
+            "email": "jcrodsolutions@gmail.com",
+			"role" : "Developer"
+        },
+        {
             "name": "Gabriel Tadra Mainginski",
-            "email": "13179626@uepg.br"
+            "email": "13179626@uepg.br",
+			"role" : "Original Developer"
         },
         {
             "name": "Ademir Mazer Junior",
-            "email": "mazer@uepg.br"
+            "email": "mazer@uepg.br",
+			"role" : "Original Developer"
         }
     ],
     "support": {
-        "issues": "https://github.com/uepg/laravel-sybase/issues",
-        "wiki": "https://github.com/uepg/laravel-sybase/wiki"
+        "issues": "https://github.com/jcrodriguezt/laravel-sybase/issues"
     },
     "require": {
         "php": ">=8.0",

@@ -254,6 +254,7 @@ class Connection extends IlluminateConnection
      */
     private function queryStringForSelect($tables)
     {
+		$tbl_original = $tables;
         if (substr_count($tables, '.') == 2 && ! substr_count($tables, '..')) {
             $pos1 = strpos($tables, '.');
             $pos2 = strpos($tables, '.', $pos1 + 1);
@@ -262,8 +263,7 @@ class Connection extends IlluminateConnection
         $explicitDB = explode('..', $tables);
 
         if (isset($explicitDB[1])) {
-            return "
-                SELECT
+            $qry = "SELECT
                     a.name,
                     b.name AS customtype,
                     st.name AS type
@@ -284,10 +284,8 @@ class Connection extends IlluminateConnection
                         'nvarchar'
                     ) AND
                     st.usertype < 100 AND
-                    object_name (
-                        a.id,
-                        db_id ('{$explicitDB[0]}')
-                    ) = '{$explicitDB[1]}'";
+					id = object_id('{$tbl_original}')"; 
+					return $qry;
         } else {
             return "
                 SELECT
@@ -496,6 +494,7 @@ class Connection extends IlluminateConnection
      */
     private function queryStringForCompileBindings($table)
     {
+		$tbl_original = $table;
         if (substr_count($table, '.') == 2 && ! substr_count($table, '..')) {
             $pos1 = strpos($table, '.');
             $pos2 = strpos($table, '.', $pos1 + 1);
@@ -526,10 +525,7 @@ class Connection extends IlluminateConnection
                         'nvarchar'
                     ) AND
                     st.usertype < 100 AND
-                    object_name (
-                        a.id,
-                        db_id ('{$explicitDB[0]}')
-                    ) = '{$explicitDB[1]}'";
+					id = object_id('{$tbl_original}')";
         } else {
             return "
                 SELECT

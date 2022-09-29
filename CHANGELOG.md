@@ -1,5 +1,9 @@
 # Release Notes
 
+## [2.6.5 (2022-09-09)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.4...2.6.5)
+
+Significant performance uplift in data types query while gathering data types.
+
 ## [2.6.4 (2022-09-09)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.3...2.6.4)
 
 Bugfix to 2.6.3 implementation.
@@ -30,11 +34,9 @@ Fixed PHP deprecation warning on Connection.php in compileOffset function parame
 
 Fix #49 count must be an array
 
-
 ## [2.2.2 (2019-05-26)](https://github.com/uepg/laravel-sybase/compare/2.2.1...2.2.2)
 
 Fix Connection class
-
 
 ## [2.2.1 (2019-05-26)](https://github.com/uepg/laravel-sybase/compare/2.2...2.2.1)
 
