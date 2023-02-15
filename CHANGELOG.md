@@ -1,5 +1,13 @@
 # Release Notes
 
+## [2.6.7 (2023-02-15)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.6...2.6.7)
+
+Adding support for Laravel 10 projects.
+
+## [2.6.6 (2022-09-29)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.5...2.6.6)
+
+RE-uploaded changes supposed to be on 2.6.5, dont know what happened.
+
 ## [2.6.5 (2022-09-09)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.4...2.6.5)
 
 Significant performance uplift in data types query while gathering data types.
