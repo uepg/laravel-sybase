@@ -41,7 +41,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Uepg\\LaravelSybase\\": "src/"
+            "Uepg\\LaravelSybase\\": "src/",
+            "Tests\\": "tests/"
         }
     },
     "scripts": {
