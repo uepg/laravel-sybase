@@ -25,6 +25,12 @@ Add the following in the require section of your **composer.json**:
 "uepg/laravel-sybase": "~2.0"
 ```
 
+### Laravel 10.x
+
+```json
+"uepg/laravel-sybase": "~3.0"
+```
+
 Update the package dependencies executing:
 
 ```shell
