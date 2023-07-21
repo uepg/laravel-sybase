@@ -27,7 +27,8 @@
         "ext-pdo": "*"
     },
     "require-dev": {
-        "orchestra/testbench": "^8.5"
+        "orchestra/testbench": "^8.5",
+        "nunomaduro/collision": "^7.4"
     },
     "extra": {
         "laravel": {

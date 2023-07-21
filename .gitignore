@@ -5,3 +5,5 @@ composer.lock
 
 phpunit.xml
 .env.testing
+/.phpunit.cache/test-results
+/.phpunit.result.cache

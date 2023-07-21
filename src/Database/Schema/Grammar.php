@@ -3,7 +3,7 @@
 namespace Uepg\LaravelSybase\Database\Schema;
 
 use Illuminate\Database\Schema\Grammars\Grammar as IlluminateGrammar;
-use Uepg\LaravelSybase\Support\Fluent;
+use Illuminate\Support\Fluent;
 
 class Grammar extends IlluminateGrammar
 {
@@ -193,9 +193,11 @@ class Grammar extends IlluminateGrammar
                 SELECT
                     *
                 FROM
-                    INFORMATION_SCHEMA.TABLES
+                    sysobjects
                 WHERE
-                    TABLE_NAME = '" . $blueprint->getTable() . "'
+                    type = 'U'
+                AND
+                    name = '" . $blueprint->getTable() . "'
             ) DROP TABLE " . $blueprint->getTable();
     }
 

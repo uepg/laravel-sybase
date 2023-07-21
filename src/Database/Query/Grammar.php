@@ -8,7 +8,7 @@ use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 class Grammar extends IlluminateGrammar
 {
     /**
-     * All of the available clause operators.
+     * All the available clause operators.
      *
      * @var array
      */
