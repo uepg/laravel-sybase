@@ -8,7 +8,7 @@ use Illuminate\Database\Query\Grammars\Grammar as IlluminateGrammar;
 class Grammar extends IlluminateGrammar
 {
     /**
-     * All of the available clause operators.
+     * All the available clause operators.
      *
      * @var array
      */
@@ -21,14 +21,14 @@ class Grammar extends IlluminateGrammar
     /**
      * Builder for query.
      *
-     * @var \Illuminate\Database\Query\Builder
+     * @var Builder
      */
     protected $builder;
 
     /**
      * Get the builder.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return Builder
      */
     public function getBuilder()
     {
@@ -38,7 +38,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a select query into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param Builder $query
      * @return string
      */
     public function compileSelect(Builder $query)
@@ -51,88 +51,15 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * Compile the "select *" portion of the query.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  array  $columns
-     * @return string
-     */
-    protected function compileColumns(Builder $query, $columns)
-    {
-        if (! is_null($query->aggregate)) {
-            return;
-        }
-
-        $select = $query->distinct ? 'select distinct ' : 'select ';
-
-        // If there is a limit on the query, but not an offset, we will add the
-        // top clause to the query, which serves as a "limit" type clause
-        // within the SQL Server system similar to the limit keywords available
-        // in MySQL.
-        if ($query->limit > 0 && $query->offset <= 0) {
-            $select .= 'top '.$query->limit.' ';
-        }
-
-        return $select.$this->columnize($columns);
-    }
-
-    /**
-     * Compile the "from" portion of the query.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  string  $table
-     * @return string
-     */
-    protected function compileFrom(Builder $query, $table)
-    {
-        $from = parent::compileFrom($query, $table);
-
-        if (is_string($query->lock)) {
-            return $from.' '.$query->lock;
-        }
-
-        if (! is_null($query->lock)) {
-            return $from.' with(rowlock,'.
-                ($query->lock ? 'updlock,' : '').'holdlock)';
-        }
-
-        return $from;
-    }
-
-    /**
-     * Compile the "limit" portions of the query.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  int  $limit
-     * @return string
-     */
-    protected function compileLimit(Builder $query, $limit)
-    {
-        return '';
-    }
-
-    /**
-     * Compile the "offset" portions of the query.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @param  int  $offset
-     * @return string
-     */
-    protected function compileOffset(Builder $query, $offset)
-    {
-        return '';
-    }
-
-    /**
      * Compile a truncate table statement into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param Builder $query
      * @return array
      */
     public function compileTruncate(Builder $query)
     {
         return [
-            'truncate table '.$this->wrapTable($query->from) => [],
+            'truncate table ' . $this->wrapTable($query->from) => [],
         ];
     }
 
@@ -147,9 +74,82 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
+     * Compile the "select *" portion of the query.
+     *
+     * @param Builder $query
+     * @param array $columns
+     * @return string
+     */
+    protected function compileColumns(Builder $query, $columns)
+    {
+        if (!is_null($query->aggregate)) {
+            return '';
+        }
+
+        $select = $query->distinct ? 'select distinct ' : 'select ';
+
+        // If there is a limit on the query, but not an offset, we will add the
+        // top clause to the query, which serves as a "limit" type clause
+        // within the SQL Server system similar to the limit keywords available
+        // in MySQL.
+        if ($query->limit > 0 && $query->offset <= 0) {
+            $select .= 'top ' . $query->limit . ' ';
+        }
+
+        return $select . $this->columnize($columns);
+    }
+
+    /**
+     * Compile the "from" portion of the query.
+     *
+     * @param Builder $query
+     * @param string $table
+     * @return string
+     */
+    protected function compileFrom(Builder $query, $table)
+    {
+        $from = parent::compileFrom($query, $table);
+
+        if (is_string($query->lock)) {
+            return $from . ' ' . $query->lock;
+        }
+
+        if (!is_null($query->lock)) {
+            return $from . ' with(rowlock,' .
+                ($query->lock ? 'updlock,' : '') . 'holdlock)';
+        }
+
+        return $from;
+    }
+
+    /**
+     * Compile the "limit" portions of the query.
+     *
+     * @param Builder $query
+     * @param int $limit
+     * @return string
+     */
+    protected function compileLimit(Builder $query, $limit)
+    {
+        return '';
+    }
+
+    /**
+     * Compile the "offset" portions of the query.
+     *
+     * @param Builder $query
+     * @param int $offset
+     * @return string
+     */
+    protected function compileOffset(Builder $query, $offset)
+    {
+        return '';
+    }
+
+    /**
      * Wrap a single string in keyword identifiers.
      *
-     * @param  string  $value
+     * @param string $value
      * @return string
      */
     protected function wrapValue($value)
@@ -158,6 +158,6 @@ class Grammar extends IlluminateGrammar
             return $value;
         }
 
-        return '['.str_replace(']', ']]', $value).']';
+        return '[' . str_replace(']', ']]', $value) . ']';
     }
 }

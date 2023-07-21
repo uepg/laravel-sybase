@@ -33,18 +33,5 @@ class SybaseServiceProvider extends ServiceProvider
         $this->app->bind('db.connector.sqlsrv', function ($app) {
             return new Connector();
         });
-
-        // $this->app->bind('db.connection.sqlsrv', function (
-        //     $app,
-        //     $parameters
-        // ) {
-        //     list($connection, $database, $prefix, $config) = $parameters;
-        //     return new SybaseConnection(
-        //         $connection,
-        //         $database,
-        //         $prefix,
-        //         $config
-        //     );
-        // });
     }
 }
