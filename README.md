@@ -32,7 +32,7 @@ Update the package dependencies executing:
 
 ## Install
 
-Update your **config/database.php's** default driver with the settings for your **sybase server** or your custom **odbc**. See the following example:
+Update your **config/database.php's** default driver with the settings for your **sybase server** or your custom **odbc**. See the following example: (please note the *sybasease* driver name)
 
 ```
 <?php
@@ -42,7 +42,7 @@ return [
     'connections' => [
         ...
         'sybase' => [
-            'driver' => 'sqlsrv',
+            'driver' => 'sybasease',
             'host' => env('DB_HOST', 'sybase.myserver.com'),
             'port' => env('DB_PORT', '5000'),
             //'dsn' => env('DB_DSN'),  // remove comment in case you define an odbc connection in your env
