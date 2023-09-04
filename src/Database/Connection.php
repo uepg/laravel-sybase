@@ -49,7 +49,7 @@ class Connection extends IlluminateConnection
      */
     public function transaction(Closure $callback, $attempts = 1)
     {
-        if ($this->getDriverName() === 'sqlsrv') {
+        if ($this->getDriverName() === 'sybasease') {
             return parent::transaction($callback);
         }
 
@@ -203,7 +203,8 @@ class Connection extends IlluminateConnection
                                 )
                         ) {
                             if (! is_null($bindings[$i])) {
-                                $newBinds[$i] = $bindings[$i] / 1;
+//                                $newBinds[$i] = $bindings[$i] / 1;  // somtimes this fails, haven't found out why ... yet.  Let's try not doing it.
+                                $newBinds[$i] = $bindings[$i];
                             } else {
                                 $newBinds[$i] = null;
                             }
