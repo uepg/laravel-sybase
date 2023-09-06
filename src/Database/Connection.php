@@ -139,9 +139,9 @@ class Connection extends IlluminateConnection
 
         foreach ($arrTables as $tables) {
             preg_match(
-                    "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
-                    $tables,
-                    $alias
+                "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
+                $tables,
+                $alias
             );
 
             if (empty($alias['alias'])) {
@@ -190,17 +190,17 @@ class Connection extends IlluminateConnection
                     $newBinds[] = $bindings[$i];
                     $i++;
                 } elseif (
-                        isset($wheres[$ind]['value']) &&
-                        isset($types[strtolower($wheres[$ind]['column'])])
+                    isset($wheres[$ind]['value']) &&
+                    isset($types[strtolower($wheres[$ind]['column'])])
                 ) {
                     if (is_object($wheres[$ind]['value']) === false) {
                         if (
-                                in_array(
-                                        strtolower($types[
-                                                strtolower($wheres[$ind]['column'])
-                                                ]),
-                                        $this->withoutQuotes
-                                )
+                            in_array(
+                                strtolower($types[
+                                        strtolower($wheres[$ind]['column'])
+                                        ]),
+                                $this->withoutQuotes
+                            )
                         ) {
                             if (! is_null($bindings[$i])) {
 //                                $newBinds[$i] = $bindings[$i] / 1;  // somtimes this fails, haven't found out why ... yet.  Let's try not doing it.
@@ -214,19 +214,19 @@ class Connection extends IlluminateConnection
                         $i++;
                     }
                 } elseif (
-                        isset($wheres[$ind]['values']) &&
-                        isset($types[strtolower($wheres[$ind]['column'])])
+                    isset($wheres[$ind]['values']) &&
+                    isset($types[strtolower($wheres[$ind]['column'])])
                 ) {
                     foreach ($wheres[$ind]['values'] as $value) {
                         if (
-                                in_array(
-                                        strtolower($types[
-                                                strtolower($wheres[$ind]['column'])
-                                                ]),
-                                        $this->withoutQuotes
-                                )
+                            in_array(
+                                strtolower($types[
+                                        strtolower($wheres[$ind]['column'])
+                                        ]),
+                                $this->withoutQuotes
+                            )
                         ) {
-							if(isset($bindings[$i])){
+                            if (isset($bindings[$i])) {
                                 if (! is_null($bindings[$i])) {
                                     $newBinds[$i] = $bindings[$i] / 1;
                                 } else {
@@ -255,7 +255,7 @@ class Connection extends IlluminateConnection
      */
     private function queryStringForSelect($tables)
     {
-		$tbl_original = $tables;
+        $tbl_original = $tables;
         if (substr_count($tables, '.') == 2 && ! substr_count($tables, '..')) {
             $pos1 = strpos($tables, '.');
             $pos2 = strpos($tables, '.', $pos1 + 1);
@@ -285,8 +285,9 @@ class Connection extends IlluminateConnection
                         'nvarchar'
                     ) AND
                     st.usertype < 100 AND
-					id = object_id('{$tbl_original}')"; 
-					return $qry;
+					id = object_id('{$tbl_original}')";
+
+            return $qry;
         } else {
             return "
                 SELECT
@@ -339,25 +340,25 @@ class Connection extends IlluminateConnection
                 }
             case 'insert':
                 preg_match(
-                        "/(?'tables'.*) \((?'attributes'.*)\) values/i",
-                        $query,
-                        $matches
+                    "/(?'tables'.*) \((?'attributes'.*)\) values/i",
+                    $query,
+                    $matches
                 );
                 $wheres = [];
                 break;
             case 'update':
                 preg_match(
-                        "/(?'tables'.*) set (?'attributes'.*)/i",
-                        $query,
-                        $matches
+                    "/(?'tables'.*) set (?'attributes'.*)/i",
+                    $query,
+                    $matches
                 );
                 $wheres = explode('and', Str::after($matches[2], 'where '));
                 break;
             case 'delete':
                 preg_match(
-                        "/(?'tables'.*) where (?'attributes'.*)/i",
-                        $query,
-                        $matches
+                    "/(?'tables'.*) where (?'attributes'.*)/i",
+                    $query,
+                    $matches
                 );
                 $wheres = explode('and', $matches[2]);
                 break;
@@ -373,8 +374,8 @@ class Connection extends IlluminateConnection
         }
 
         $desQuery = array_intersect_key(
-                $matches,
-                array_flip(array_filter(array_keys($matches), 'is_string'))
+            $matches,
+            array_flip(array_filter(array_keys($matches), 'is_string'))
         );
         if (is_array($desQuery['tables'])) {
             $desQuery['tables'] = implode($desQuery['tables'], ' ');
@@ -397,9 +398,9 @@ class Connection extends IlluminateConnection
         preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
 
         preg_match_all(
-                "/\[([^\]]*)\]/",
-                str_replace('].[].[', '..', $desQuery['tables']),
-                $arrTables
+            "/\[([^\]]*)\]/",
+            str_replace('].[].[', '..', $desQuery['tables']),
+            $arrTables
         );
 
         $arrQuery = $arrQuery[1];
@@ -426,7 +427,7 @@ class Connection extends IlluminateConnection
 
                 if (! array_key_exists($table, $newFormat)) {
                     $queryRes = $this->getPdo()->query(
-                            $this->queryStringForCompileBindings($table)
+                        $this->queryStringForCompileBindings($table)
                     );
 
                     if (! isset($types[$table])) {
@@ -450,10 +451,10 @@ class Connection extends IlluminateConnection
             if (! $itsTable) {
                 if (count($bindings) > $ind) {
                     array_push(
-                            $newFormat[$table], [
-                                'campo' => $campos,
-                                'binding' => $ind,
-                            ]
+                        $newFormat[$table], [
+                            'campo' => $campos,
+                            'binding' => $ind,
+                        ]
                     );
 
                     if (isset($wheresCount[$campos]['count']) && $wheresCount[$campos]['count'] > 1) {
@@ -473,8 +474,8 @@ class Connection extends IlluminateConnection
                         }
                     } else {
                         $newBinds[$ind] = $bindings[$ind] === null ? null : (
-                                (in_array(strtolower($types[$table][$campos]['type']), $this->withoutQuotes)) ? $bindings[$ind] / 1 : (string) $bindings[$ind]
-                                );
+                            (in_array(strtolower($types[$table][$campos]['type']), $this->withoutQuotes)) ? $bindings[$ind] / 1 : (string) $bindings[$ind]
+                        );
                     }
                 } else {
                     array_push($newFormat[$table], ['campo' => $campos]);
@@ -495,7 +496,7 @@ class Connection extends IlluminateConnection
      */
     private function queryStringForCompileBindings($table)
     {
-		$tbl_original = $table;
+        $tbl_original = $table;
         if (substr_count($table, '.') == 2 && ! substr_count($table, '..')) {
             $pos1 = strpos($table, '.');
             $pos2 = strpos($table, '.', $pos1 + 1);
@@ -619,14 +620,14 @@ class Connection extends IlluminateConnection
         $queryString = $this->queryStringForIdentity($from);
 
         $identity = $this->getPdo()->query($queryString)->fetchAll(
-                        $me->getFetchMode()
-                )[0];
+            $me->getFetchMode()
+        )[0];
 
         if (count((array) $identity) === 0) {
             $queryString = $this->queryStringForPrimaries($from);
 
             $primaries = $this->getPdo()->query($queryString)->fetchAll(
-                    $me->getFetchMode()
+                $me->getFetchMode()
             );
 
             foreach ($primaries as $primary) {
@@ -648,9 +649,9 @@ class Connection extends IlluminateConnection
 
             // Offset operation
             $this->getPdo()->query(str_replace(
-                            ' from ',
-                            ' into #tmpPaginate from ',
-                            $this->compileNewQuery($query, $bindings)
+                ' from ',
+                ' into #tmpPaginate from ',
+                $this->compileNewQuery($query, $bindings)
             ));
 
             $this->getPdo()->query('
@@ -769,9 +770,9 @@ class Connection extends IlluminateConnection
     public function select($query, $bindings = [], $useReadPdo = true)
     {
         return $this->run($query, $bindings, function (
-                        $query,
-                        $bindings
-                ) {
+            $query,
+            $bindings
+        ) {
             if ($this->pretending()) {
                 return [];
             }
@@ -788,9 +789,9 @@ class Connection extends IlluminateConnection
                 $result = [];
 
                 $statement = $this->getPdo()->query($this->compileNewQuery(
-                                        $query,
-                                        $bindings
-                        ));
+                    $query,
+                    $bindings
+                ));
 
                 do {
                     $result += $statement->fetchAll($this->getFetchMode());
@@ -816,9 +817,9 @@ class Connection extends IlluminateConnection
             }
 
             return $this->getPdo()->query($this->compileNewQuery(
-                                    $query,
-                                    $bindings
-                    ));
+                $query,
+                $bindings
+            ));
         });
     }
 
@@ -837,9 +838,9 @@ class Connection extends IlluminateConnection
             }
 
             return $this->getPdo()->query($this->compileNewQuery(
-                                    $query,
-                                    $bindings
-                            ))->rowCount();
+                $query,
+                $bindings
+            ))->rowCount();
         });
     }
 
