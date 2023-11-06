@@ -51,6 +51,34 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
+     * Compile a update query into SQL.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    public function compileUpdate(Builder $query, array $values)
+    {
+        $this->builder = $query;
+
+        $components = $this->compileComponents($query);
+
+        $table = $this->wrapTable($query->from);
+
+        $columns = $this->compileUpdateColumns($query, $values);
+
+        $where = $this->compileWheres($query);
+        
+        // stores the values ​​that will be assigned
+        $this->builder->set = $values;
+
+        return trim(
+            isset($query->joins)
+                ? $this->compileUpdateWithJoins($query, $table, $columns, $where)
+                : $this->compileUpdateWithoutJoins($query, $table, $columns, $where)
+        );
+    }
+    
+    /**
      * Compile the "select *" portion of the query.
      *
      * @param  \Illuminate\Database\Query\Builder  $query
