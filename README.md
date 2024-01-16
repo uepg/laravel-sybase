@@ -21,7 +21,7 @@ composer require jcrodriguezt/laravel-sybase
 ## Update
 Update the following in the require section of your **composer.json**:
 ```json
-"jcrodriguezt/laravel-sybase": "~2.0"
+"jcrodriguezt/laravel-sybase": "~3.1"
 ```
 
 Update the package dependencies executing:
@@ -49,7 +49,6 @@ return [
             'database' => env('DB_DATABASE', 'mydatabase'),
             'username' => env('DB_USERNAME', 'user'),
             'password' => env('DB_PASSWORD', 'password'),
-            'charset' => 'utf8',
             'prefix' => '',
         ],
         ...
@@ -57,6 +56,19 @@ return [
     ...
 ]
 ```
+
+To use different charset set on your `.env`
+```dotenv
+DB_CHARSET=DBCHARSET
+APPLICATION_CHARSET=APPLICATIONCHARSET
+```
+
+for example:
+```dotenv
+DB_CHARSET=CP850
+APPLICATION_CHARSET=UTF-8
+```
+
 
 Update your **.env** with the settings for the **sybase** connection. See the following example:
 
