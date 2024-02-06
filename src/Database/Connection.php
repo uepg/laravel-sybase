@@ -185,7 +185,7 @@ class Connection extends IlluminateConnection
                 return $v / 1;
             } else {
                 if(env('DB_CHARSET') && env('APPLICATION_CHARSET')) {
-                    return $v == null ? :mb_convert_encoding((string) $v, env('DB_CHARSET'), env('APPLICATION_CHARSET'));
+                    return $v == null ? null : mb_convert_encoding((string) $v, env('DB_CHARSET'), env('APPLICATION_CHARSET'));
                 } else {
                     return $v;
                 }
@@ -624,7 +624,7 @@ class Connection extends IlluminateConnection
                 if(env('DB_CHARSET') && env('APPLICATION_CHARSET')) {
                     foreach ($result as $row) {
                         foreach ($row as $name => $col) {
-                            $row->$name = $col == null ? : mb_convert_encoding($col, env('APPLICATION_CHARSET'), env('DB_CHARSET'));
+                            $row->$name = $col == null ? null : mb_convert_encoding($col, env('APPLICATION_CHARSET'), env('DB_CHARSET'));
                         }
                     }
                 }
