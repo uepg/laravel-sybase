@@ -423,89 +423,6 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * Compile offset.
-     *
-     * @param  int  $offset
-     * @param  string  $query
-     * @param  array  $bindings
-     * @param  \Uepg\LaravelSybase\Database\Connection  $me
-     * @return string
-     */
-    public function compileOffset($offset, $query, $bindings = [], $me)
-    {
-        $limit = $this->queryGrammar->getBuilder()->limit;
-
-        $from = explode(' ', $this->queryGrammar->getBuilder()->from)[0];
-
-        if (! isset($limit)) {
-            $limit = 999999999999999999999999999;
-        }
-
-        $queryString = $this->queryStringForIdentity($from);
-
-        $identity = $this->getPdo()->query($queryString)->fetchAll(
-            $me->getFetchMode()
-        )[0];
-
-        if (count((array) $identity) === 0) {
-            $queryString = $this->queryStringForPrimaries($from);
-
-            $primaries = $this->getPdo()->query($queryString)->fetchAll(
-                $me->getFetchMode()
-            );
-
-            foreach ($primaries as $primary) {
-                $newArr[] = $primary->primary_key.'+0 AS '.
-                    $primary->primary_key;
-
-                $whereArr[] = '#tmpPaginate.'.$primary->primary_key.
-                    ' = #tmpTable.'.$primary->primary_key;
-            }
-
-            $resPrimaries = implode(', ', $newArr);
-
-            $wherePrimaries = implode(' AND ', $whereArr);
-        } else {
-            $resPrimaries = $identity->column.'+0 AS '.$identity->column;
-
-            $wherePrimaries = '#tmpPaginate.'.$identity->column.
-                ' = #tmpTable.'.$identity->column;
-
-            // Offset operation
-            $this->getPdo()->query(str_replace(
-                ' from ',
-                ' into #tmpPaginate from ',
-                $this->compileNewQuery($query, $bindings)
-            ));
-
-            $this->getPdo()->query('
-                SELECT
-                    '.$resPrimaries.',
-                    idTmp=identity(18)
-                INTO
-                    #tmpTable
-                FROM
-                    #tmpPaginate');
-
-            return $this->getPdo()->query('
-                SELECT
-                    #tmpPaginate.*,
-                    #tmpTable.idTmp
-                FROM
-                    #tmpTable
-                INNER JOIN
-                    #tmpPaginate
-                ON
-                    '.$wherePrimaries.'
-                WHERE
-                    #tmpTable.idTmp BETWEEN '.($offset + 1).' AND
-                    '.($offset + $limit).'
-                ORDER BY
-                    #tmpTable.idTmp ASC')->fetchAll($me->getFetchMode());
-        }
-    }
-
-    /**
      * Query string for identity.
      *
      * @param  string  $from
@@ -601,36 +518,26 @@ class Connection extends IlluminateConnection
                 return [];
             }
 
-            if ($this->queryGrammar->getBuilder() != null) {
-                $offset = $this->queryGrammar->getBuilder()->offset;
-            } else {
-                $offset = 0;
-            }
+            $result = [];
 
-            if ($offset > 0) {
-                return $this->compileOffset($offset, $query, $bindings, $this);
-            } else {
-                $result = [];
+            $statement = $this->getPdo()->query($this->compileNewQuery(
+                $query,
+                $bindings
+            ));
 
-                $statement = $this->getPdo()->query($this->compileNewQuery(
-                    $query,
-                    $bindings
-                ));
+            do {
+                $result += $statement->fetchAll($this->getFetchMode());
+            } while ($statement->nextRowset());
 
-                do {
-                    $result += $statement->fetchAll($this->getFetchMode());
-                } while ($statement->nextRowset());
-
-                if(env('DB_CHARSET') && env('APPLICATION_CHARSET')) {
-                    foreach ($result as $row) {
-                        foreach ($row as $name => $col) {
-                            $row->$name = $col == null ? null : mb_convert_encoding($col, env('APPLICATION_CHARSET'), env('DB_CHARSET'));
-                        }
+            if(env('DB_CHARSET') && env('APPLICATION_CHARSET')) {
+                foreach ($result as $row) {
+                    foreach ($row as $name => $col) {
+                        $row->$name = $col == null ? null : mb_convert_encoding($col, env('APPLICATION_CHARSET'), env('DB_CHARSET'));
                     }
                 }
-
-                return $result;
             }
+
+            return $result;
         });
     }
 
