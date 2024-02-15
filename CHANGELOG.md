@@ -1,5 +1,9 @@
 # Release Notes
 
+## [3.1 (2023-02-15)](https://github.com/xBu3n0/laravel-sybase/compare/2.6.6...2.6.7)
+
+Rewriting and cleaning up the library and adding new functionality.
+
 ## [2.6.7 (2023-02-15)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.6...2.6.7)
 
 Adding support for Laravel 10 projects.

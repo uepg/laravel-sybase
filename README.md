@@ -1,10 +1,10 @@
 # Sybase ASE based Eloquent module extension for Laravel 
 
-[![Packagist Version](https://img.shields.io/packagist/v/jcrodriguezt/laravel-sybase.svg)](https://packagist.org/packages/jcrodriguezt/laravel-sybase)
-[![PHP from Packagist](https://img.shields.io/packagist/php-v/jcrodriguezt/laravel-sybase.svg)](https://packagist.org/packages/jcrodriguezt/laravel-sybase)
-[![Packagist](https://img.shields.io/packagist/dt/jcrodriguezt/laravel-sybase.svg)](https://packagist.org/packages/jcrodriguezt/laravel-sybase/stats)
-[![GitHub contributors](https://img.shields.io/github/contributors-anon/jcrodriguezt/laravel-sybase.svg)](https://github.com/jcrodriguezt/laravel-sybase/graphs/contributors)
-[![GitHub](https://img.shields.io/github/license/jcrodriguezt/laravel-sybase.svg)](https://github.com/jcrodriguezt/laravel-sybase/blob/master/LICENSE)
+[![Packagist Version](https://img.shields.io/packagist/v/xBu3n0/laravel-sybase.svg)](https://packagist.org/packages/xBu3n0/laravel-sybase)
+[![PHP from Packagist](https://img.shields.io/packagist/php-v/xBu3n0/laravel-sybase.svg)](https://packagist.org/packages/xBu3n0/laravel-sybase)
+[![Packagist](https://img.shields.io/packagist/dt/xBu3n0/laravel-sybase.svg)](https://packagist.org/packages/xBu3n0/laravel-sybase/stats)
+[![GitHub contributors](https://img.shields.io/github/contributors-anon/xBu3n0/laravel-sybase.svg)](https://github.com/xBu3n0/laravel-sybase/graphs/contributors)
+[![GitHub](https://img.shields.io/github/license/xBu3n0/laravel-sybase.svg)](https://github.com/xBu3n0/laravel-sybase/blob/master/LICENSE)
 
 * Original codebase https://github.com/uepg/laravel-sybase.
 * Use default eloquent: works with odbc and dblib!
@@ -15,13 +15,13 @@
 
 ## Install
 ```
-composer require jcrodriguezt/laravel-sybase
+composer require xBu3n0/laravel-sybase
 ```
 
 ## Update
 Update the following in the require section of your **composer.json**:
 ```json
-"jcrodriguezt/laravel-sybase": "~3.1"
+"xBu3n0/laravel-sybase": "~3.1"
 ```
 
 Update the package dependencies executing:
@@ -50,6 +50,7 @@ return [
             'username' => env('DB_USERNAME', 'user'),
             'password' => env('DB_PASSWORD', 'password'),
             'prefix' => '',
+            //'charset' => '', // charset doesn't work in SYBASE
         ],
         ...
     ],
@@ -113,4 +114,4 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
     tds version = 7.3
 ```
 ## Issues
-Feel free to ask in https://github.com/jcrodriguezt/laravel-sybase/issues
+Feel free to ask in https://github.com/xBu3n0/laravel-sybase/issues
