@@ -227,7 +227,7 @@ class Connection extends IlluminateConnection
                     }
                 }
             } elseif ($w['type'] == 'between') {
-                if(count($w['values']) != 2) throw new \Mockery\Exception('SQLSTATE[HY000]: The Between/NotBetween query can only receive two values ['.vsprintf(str_replace(array('?'), array('%s'), $builder->toSql()), $builder->getBindings()).']');
+                if(count($w['values']) != 2) return [];
                 foreach ($w['values'] as $v) {
                     if (gettype($v) != 'object') {
                         $keys[] = $convert($w['column'], $v);
