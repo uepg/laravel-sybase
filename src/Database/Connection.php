@@ -227,7 +227,7 @@ class Connection extends IlluminateConnection
                     }
                 }
             } elseif ($w['type'] == 'between') {
-                if(count($w['values']) != 2) return [];
+                if(count($w['values']) != 2) { return []; }
                 foreach ($w['values'] as $v) {
                     if (gettype($v) != 'object') {
                         $keys[] = $convert($w['column'], $v);
