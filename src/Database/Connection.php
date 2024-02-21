@@ -179,7 +179,7 @@ class Connection extends IlluminateConnection
         $db_charset = env('DB_CHARSET');
         $app_charset = env('APPLICATION_CHARSET');
 
-        $convert = function($column, $v) use($types) {
+        $convert = function($column, $v) use($types, $db_charset, $app_charset) {
             if (is_null($v)) return null;
 
             $variable_type = $types[strtolower($column)];
