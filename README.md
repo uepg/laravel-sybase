@@ -21,7 +21,7 @@ composer require xBu3n0/laravel-sybase
 ## Update
 Update the following in the require section of your **composer.json**:
 ```json
-"xBu3n0/laravel-sybase": "~3.1"
+"xBu3n0/laravel-sybase": "~3.2"
 ```
 
 Update the package dependencies executing:
