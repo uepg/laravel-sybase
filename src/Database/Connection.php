@@ -175,6 +175,9 @@ class Connection extends IlluminateConnection
                 }
             }
         }
+        
+        $db_charset = env('DB_CHARSET');
+        $app_charset = env('APPLICATION_CHARSET');
 
         $convert = function($column, $v) use($types) {
             if (is_null($v)) return null;
@@ -184,8 +187,8 @@ class Connection extends IlluminateConnection
             if (in_array($variable_type, $this->withoutQuotes)) {
                 return $v / 1;
             } else {
-                if(env('DB_CHARSET') && env('APPLICATION_CHARSET')) {
-                    return $v == null ? null : mb_convert_encoding((string) $v, env('DB_CHARSET'), env('APPLICATION_CHARSET'));
+                if($db_charset && $app_charset) {
+                    return $v == null ? null : mb_convert_encoding((string) $v, $db_charset, $app_charset);
                 } else {
                     return $v;
                 }
@@ -536,10 +539,14 @@ class Connection extends IlluminateConnection
                 $result += $statement->fetchAll($this->getFetchMode());
             } while ($statement->nextRowset());
 
-            if(env('DB_CHARSET') && env('APPLICATION_CHARSET')) {
+            $db_charset = env('DB_CHARSET');
+            $app_charset = env('APPLICATION_CHARSET');
+            if($db_charset && $app_charset) {
                 foreach ($result as $row) {
                     foreach ($row as $name => $col) {
-                        $row->$name = $col == null ? null : mb_convert_encoding($col, env('APPLICATION_CHARSET'), env('DB_CHARSET'));
+                        if (is_string($col) && mb_detect_encoding($col, [$app_charset, $db_charset])) {
+                            $row->$name = $col == null ? null : mb_convert_encoding($col, $app_charset, $db_charset);
+                        }
                     }
                 }
             }
