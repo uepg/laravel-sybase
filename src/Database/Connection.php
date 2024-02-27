@@ -7,6 +7,7 @@ use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Exception;
 use Illuminate\Database\Connection as IlluminateConnection;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use PDO;
 use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
@@ -146,6 +147,7 @@ class Connection extends IlluminateConnection
             }
         }
 
+        $cache_columns = env('SYBASE_CACHE_COLUMNS');
         foreach ($arrTables as $tables) {
             preg_match (
                 "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
@@ -159,11 +161,18 @@ class Connection extends IlluminateConnection
                 $tables = $alias['table'];
             }
 
+            if($cache_columns == true) {
+                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_COLUMNS_TIME') ?? 600, function() use($tables) {
+                    $queryString = $this->queryString($tables);
+                    $queryRes = $this->getPdo()->query($queryString);
+                    return $queryRes->fetchAll(PDO::FETCH_NAMED);
+                });
+            } else {
+                $queryString = $this->queryString($tables);
+                $queryRes = $this->getPdo()->query($queryString);
+                $aux = $queryRes->fetchAll(PDO::FETCH_NAMED);
+            }
 
-            $queryString = $this->queryString($tables);
-            $queryRes = $this->getPdo()->query($queryString);
-
-            $aux = $queryRes->fetchAll(PDO::FETCH_NAMED);
             foreach ($aux as &$row) {
                 $types[strtolower($row['name'])] = $row['type'];
                 $types[strtolower($tables.'.'.$row['name'])] = $row['type'];
@@ -175,7 +184,7 @@ class Connection extends IlluminateConnection
                 }
             }
         }
-        
+
         $db_charset = env('DB_CHARSET');
         $app_charset = env('APPLICATION_CHARSET');
 
@@ -326,69 +335,6 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * Query string for compile bindings.
-     *
-     * @param  string  $table
-     * @return string
-     */
-    private function queryStringForCompileBindings($table)
-    {
-        $explicitDB = explode('..', $table);
-
-        if (isset($explicitDB[1])) {
-            return "
-                SELECT
-                    a.name,
-                    b.name AS customtype,
-                    st.name AS type
-                FROM
-                    {$explicitDB[0]}..syscolumns a,
-                    {$explicitDB[0]}..systypes b,
-                    {$explicitDB[0]}..systypes s,
-                    {$explicitDB[0]}..systypes st
-                WHERE
-                    a.usertype = b.usertype AND
-                    s.usertype = a.usertype AND
-                    s.type = st.type AND
-                    st.name NOT IN (
-                        'timestamp',
-                        'sysname',
-                        'longsysname',
-                        'nchar',
-                        'nvarchar'
-                    ) AND
-                    st.usertype < 100 AND
-                    object_name (
-                        a.id,
-                        db_id ('{$explicitDB[0]}')
-                    ) = '{$explicitDB[1]}'";
-        } else {
-            return "
-                SELECT
-                    a.name,
-                    st.name AS type
-                FROM
-                    syscolumns a,
-                    systypes b,
-                    systypes s,
-                    systypes st
-                WHERE
-                    a.usertype = b.usertype AND
-                    s.usertype = a.usertype AND
-                    s.type = st.type AND
-                    st.name NOT IN (
-                        'timestamp',
-                        'sysname',
-                        'longsysname',
-                        'nchar',
-                        'nvarchar'
-                    ) AND
-                    st.usertype < 100 AND
-                    object_name(a.id) = '{$table}'";
-        }
-    }
-
-    /**
      * Set new bindings with specified column types to Sybase.
      *
      * It could compile again from bindings using PDO::PARAM, however, it has
@@ -433,84 +379,6 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * Query string for identity.
-     *
-     * @param  string  $from
-     * @return string
-     */
-    private function queryStringForIdentity($from)
-    {
-        $explicitDB = explode('..', $from);
-
-        if (isset($explicitDB[1])) {
-            return "
-                SELECT
-                    b.name AS 'column'
-                FROM
-                    ".$explicitDB[0].'..syscolumns AS b
-                INNER JOIN
-                    '.$explicitDB[0]."..sysobjects AS a
-                ON
-                    a.id = b.id
-                WHERE
-                    status & 128 = 128 AND
-                    a.name = '".$explicitDB[1]."'";
-        } else {
-            return "
-                SELECT
-                    name AS 'column'
-                FROM
-                    syscolumns
-                WHERE
-                    status & 128 = 128 AND
-                    object_name (id) = '".$from."'";
-        }
-    }
-
-    /**
-     * Query string for primaries.
-     *
-     * @param  string  $from
-     * @return string
-     */
-    private function queryStringForPrimaries($from)
-    {
-        $explicitDB = explode('..', $from);
-
-        if (isset($explicitDB[1])) {
-            return '
-                SELECT
-                    index_col (
-                        '.$from.',
-                        i.indid,
-                        c.colid
-                    ) AS primary_key
-                FROM
-                    '.$explicitDB[0].'..sysindexes i,
-                    '.$explicitDB[0]."..syscolumns c
-                WHERE
-                    i.id = c.id AND
-                    c.colid <= i.keycnt AND
-                    i.id = object_id ('".$from."')";
-        } else {
-            return '
-                SELECT
-                    index_col (
-                        '.$from.",
-                        i.indid,
-                        c.colid
-                    ) AS primary_key
-                FROM
-                    sysindexes i,
-                    syscolumns c
-                WHERE
-                    i.id = c.id AND
-                    c.colid <= i.keycnt AND
-                    i.id = object_id ('".$from."')";
-        }
-    }
-
-    /**
      * Run a select statement against the database.
      *
      * @param  string  $query
@@ -544,8 +412,8 @@ class Connection extends IlluminateConnection
             if($db_charset && $app_charset) {
                 foreach ($result as $row) {
                     foreach ($row as $name => $col) {
-                        if (is_string($col) && mb_detect_encoding($col, [$app_charset, $db_charset])) {
-                            $row->$name = $col == null ? null : mb_convert_encoding($col, $app_charset, $db_charset);
+                        if (is_string($col)) {
+                            $row->$name = mb_convert_encoding($col, $app_charset, $db_charset);
                         }
                     }
                 }
