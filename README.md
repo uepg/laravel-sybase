@@ -21,7 +21,7 @@ composer require xBu3n0/laravel-sybase
 ## Update
 Update the following in the require section of your **composer.json**:
 ```json
-"xBu3n0/laravel-sybase": "~3.2"
+"xBu3n0/laravel-sybase": "~3.2.1"
 ```
 
 Update the package dependencies executing:
@@ -68,6 +68,29 @@ for example:
 ```dotenv
 DB_CHARSET=CP850
 APPLICATION_CHARSET=UTF-8
+```
+
+You can keep the columns cached to optimize library queries, saving 100~150ms for each `select`, `update` and `delete`.
+```
+select top 1 [A] from [...]
+Without cache:  147ms
+With cache:     29.17ms
+
+select * from [B] [...]
+Without cache:  126ms
+With cache:     7.91ms
+
+select count(*) as aggregate from [...]
+Without cache:  223ms
+With cache:     11.91ms
+```
+
+The cache cost is `Sum (column name size)` that the cached tables have (the memory cost to activate compensates for the efficiency).
+
+To enable this feature add this to the `.env` file of your project:
+```dotenv
+SYBASE_CACHE_COLUMNS=true
+SYBASE_CACHE_COLUMNS_TIME=TIME_IN_SECONDS # e.g. SYBASE_CACHE_COLUMNS_TIME=600 for 10 minutes
 ```
 
 
