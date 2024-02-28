@@ -224,6 +224,10 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileOffset(Builder $query, $offset)
     {
+        if($offset > 0) {
+            return 'rows offset '.$offset;
+        }
+
         return '';
     }
 
