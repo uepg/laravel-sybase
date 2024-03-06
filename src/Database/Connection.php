@@ -199,7 +199,7 @@ class Connection extends IlluminateConnection
                 if($db_charset && $app_charset) {
                     return $v == null ? null : mb_convert_encoding((string) $v, $db_charset, $app_charset);
                 } else {
-                    return $v;
+                    return (string) $v;
                 }
             }
         };
