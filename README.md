@@ -7,10 +7,10 @@
 [![GitHub](https://img.shields.io/github/license/jcrodriguezt/laravel-sybase.svg)](https://github.com/jcrodriguezt/laravel-sybase/blob/master/LICENSE)
 
 * Original codebase https://github.com/uepg/laravel-sybase.
-* Use default eloquent: works with odbc and dblib!
+* Use default eloquent syntax
 * Improvements in delete and insert statements when using array based clauses like whereIn, whereBetween, etc
 * Works with MS-SQL connections too via FreeTds
-* Support for Laravel versions 7.x, 8.x, 9.x, 10.x
+* Support for Laravel versions 7.x, 8.x, 9.x, 10.x, 11.x
 
 
 ## Install
