@@ -135,6 +135,7 @@ class Connection extends IlluminateConnection
         }
 
         $wheres = [];
+		$types = [];
 
         foreach ($builder->wheres as $w) {
             switch ($w['type']) {
@@ -147,7 +148,8 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $cache_columns = env('SYBASE_CACHE_COLUMNS');
+        $cache_columns = env('SYBASE_CACHE_COLUMNS',true);
+        $cache_columns_time = env('SYBASE_CACHE_COLUMNS_TIME',600);
         foreach ($arrTables as $tables) {
             preg_match (
                 "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
@@ -163,7 +165,7 @@ class Connection extends IlluminateConnection
             }
 
             if($cache_columns == true) {
-                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_COLUMNS_TIME') ?? 600, function() use($tables) {
+                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', $cache_columns_time, function() use($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
                     return $queryRes->fetchAll(PDO::FETCH_NAMED);
@@ -173,14 +175,18 @@ class Connection extends IlluminateConnection
                 $queryRes = $this->getPdo()->query($queryString);
                 $aux = $queryRes->fetchAll(PDO::FETCH_NAMED);
             }
-
+			
+			// I don't think it's necessary to strtolower fields.
             foreach ($aux as &$row) {
-                $types[strtolower($row['name'])] = $row['type'];
-                $types[strtolower($tables.'.'.$row['name'])] = $row['type'];
+                //$types[strtolower($row['name'])] = $row['type'];
+                $types[$row['name']] = $row['type'];
+                //$types[strtolower($tables.'.'.$row['name'])] = $row['type'];
+                $types[$tables.'.'.$row['name']] = $row['type'];
 
                 if (! empty($alias['alias'])) {
                     $types[
-                    strtolower($alias['alias'].'.'.$row['name'])
+                    //strtolower($alias['alias'].'.'.$row['name'])
+                    $alias['alias'].'.'.$row['name']
                     ] = $row['type'];
                 }
             }
@@ -188,11 +194,12 @@ class Connection extends IlluminateConnection
 
         $db_charset = env('DB_CHARSET');
         $app_charset = env('APPLICATION_CHARSET');
-
+		
         $convert = function($column, $v) use($types, $db_charset, $app_charset) {
             if (is_null($v)) return null;
 
-            $variable_type = $types[strtolower($column)];
+            //$variable_type = $types[strtolower($column)];
+            $variable_type = $types[$column];
 
             if (in_array($variable_type, $this->withoutQuotes)) {
                 return $v / 1;
