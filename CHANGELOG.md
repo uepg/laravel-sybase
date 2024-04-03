@@ -1,8 +1,39 @@
 # Release Notes
 
+## [3.2.1 (2024-02-12)](https://github.com/jcrodriguezt/laravel-sybase/compare/3.2.0...3.2.1)
+
+Removing use of strtolower in compile function for column names. This is causing issues when given that column names are case sensitive
+
+## [3.2.0 (2024-02-12)](https://github.com/jcrodriguezt/laravel-sybase/compare/3.1.2...3.2.0)
+
+Implementing support for Laravel Framework 11
+
+## [3.1.2 (2024-28-12)](https://github.com/jcrodriguezt/laravel-sybase/compare/3.1.1...3.1.2)
+
+Removing use of strtolower in compile function for table names. It's causing me issues with tables that have lower and capital letters as well in its name.
+
+## [3.1.1 (2024-02-28)](https://github.com/jcrodriguezt/laravel-sybase/compare/3.1.0...3.1.1)
+
+Implementing latest xBu3n0 changes. Thanks again!!
+
+## [3.1.0 (2024-01-16)](https://github.com/jcrodriguezt/laravel-sybase/compare/3.0.0...3.1.0)
+
+Implementing code improvements by xBu3n0. Thanks a lot!!
+
+## [3.0.0 (2023-09-04)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.8...3.0.0)
+
+Changes in config/database.php default driver name to sybasease, replacing sqlsrv. This is to avoid conflicts when connecting to SQL Server and Sybase ASE simultaneously in the same project.
+Changes in readme file to match this change.
+
+## [2.6.8 (2023-08-22)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.7...2.6.8)
+
+Updates to composer.json
+- Minimum PHP version:  >=8.1
+- Minimum doctrine/dbal version:  ^3.5
+
 ## [2.6.7 (2023-02-15)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.6...2.6.7)
 
-Adding support for Laravel 10 projects.
+Adding support for Laravel 10 framework.
 
 ## [2.6.6 (2022-09-29)](https://github.com/jcrodriguezt/laravel-sybase/compare/2.6.5...2.6.6)
 
