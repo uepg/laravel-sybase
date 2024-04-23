@@ -16,8 +16,6 @@ class Connector extends SqlServerConnector
             $connection->prepare("set char_convert '{$config['charset']}'")->execute();
         }
 
-        $this->configureIsolationLevel($connection, $config);
-
         return $connection;
     }
 }
