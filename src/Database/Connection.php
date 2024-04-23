@@ -185,61 +185,42 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $db_charset = env('DB_CHARSET');
-        $app_charset = env('APPLICATION_CHARSET');
-
-        $convert = function($column, $v) use($types, $db_charset, $app_charset) {
-            if (is_null($v)) return null;
-
-            $variable_type = $types[strtolower($column)];
-
-            if (in_array($variable_type, $this->withoutQuotes)) {
-                return $v / 1;
-            } else {
-                if($db_charset && $app_charset) {
-                    return $v == null ? null : mb_convert_encoding((string) $v, $db_charset, $app_charset);
-                } else {
-                    return (string) $v;
-                }
-            }
-        };
-
         $keys = [];
 
         if (isset($builder->values)) {
             foreach ($builder->values as $key => $value) {
                 if(gettype($value) == 'array') {
                     foreach ($value as $k => $v) {
-                        $keys[] = $convert($k, $v);
+                        $keys[] = $v;
                     }
                 } else {
-                    $keys[] = $convert($key, $value);
+                    $keys[] = $value;
                 }
             }
         }
 
         if (isset($builder->set)) {
             foreach ($builder->set as $k => $v) {
-                $keys[] = $convert($k, $v);
+                $keys[] = $v;
             }
         }
 
         foreach ($wheres as $w) {
             if ($w['type'] == 'Basic') {
                 if (gettype($w['value']) != 'object') {
-                    $keys[] = $convert($w['column'], $w['value']);
+                    $keys[] = $w['value'];
                 }
             } elseif ($w['type'] == 'In' || $w['type'] == 'NotIn') {
                 foreach ($w['values'] as $v) {
                     if (gettype($v) != 'object') {
-                        $keys[] = $convert($w['column'], $v);
+                        $keys[] = $v;
                     }
                 }
             } elseif ($w['type'] == 'between') {
                 if(count($w['values']) != 2) { return []; }
                 foreach ($w['values'] as $v) {
                     if (gettype($v) != 'object') {
-                        $keys[] = $convert($w['column'], $v);
+                        $keys[] = $v;
                     }
                 }
             }
@@ -262,7 +243,6 @@ class Connection extends IlluminateConnection
             return "
                 SELECT
                     a.name,
-                    b.name AS customtype,
                     st.name AS type
                 FROM
                     {$explicitDB[0]}..syscolumns a,
@@ -406,18 +386,6 @@ class Connection extends IlluminateConnection
             do {
                 $result += $statement->fetchAll($this->getFetchMode());
             } while ($statement->nextRowset());
-
-            $db_charset = env('DB_CHARSET');
-            $app_charset = env('APPLICATION_CHARSET');
-            if($db_charset && $app_charset) {
-                foreach ($result as $row) {
-                    foreach ($row as $name => $col) {
-                        if (is_string($col)) {
-                            $row->$name = mb_convert_encoding($col, $app_charset, $db_charset);
-                        }
-                    }
-                }
-            }
 
             return $result;
         });

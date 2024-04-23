@@ -21,7 +21,7 @@ composer require xBu3n0/laravel-sybase
 ## Update
 Update the following in the require section of your **composer.json**:
 ```json
-"xBu3n0/laravel-sybase": "~3.2.2"
+"xBu3n0/laravel-sybase": "~3.3"
 ```
 
 Update the package dependencies executing:
@@ -50,25 +50,12 @@ return [
             'username' => env('DB_USERNAME', 'user'),
             'password' => env('DB_PASSWORD', 'password'),
             'prefix' => '',
-            //'charset' => '', // charset doesn't work in SYBASE
+            'charset' => '', // change to the charset used in your application
         ],
         ...
     ],
     ...
 ]
-```
-
-To use different charset set on your `.env`
-```dotenv
-DB_CHARSET=DBCHARSET
-APPLICATION_CHARSET=APPLICATIONCHARSET
-```
-
-for example:
-```dotenv
-DB_CHARSET=CP850
-APPLICATION_CHARSET=UTF-8
-```
 
 You can keep the columns cached to optimize library queries, saving 100~150ms for each `select`, `update` and `delete`.
 ```
