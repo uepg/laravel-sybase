@@ -68,7 +68,7 @@ class Connection extends IlluminateConnection
         // If we catch an exception, we will roll back so nothing gets messed
         // up in the database. Then we'll re-throw the exception so it can
         // be handled how the developer sees fit for their applications.
-         catch (Exception $e) {
+        catch (Exception $e) {
             $this->pdo->exec('ROLLBACK TRAN');
 
             throw $e;
@@ -128,7 +128,7 @@ class Connection extends IlluminateConnection
         $arrTables = [];
 
         array_push($arrTables, $builder->from);
-        if (!empty($builder->joins)) {
+        if (! empty($builder->joins)) {
             foreach ($builder->joins as $join) {
                 array_push($arrTables, $join->table);
             }
@@ -148,8 +148,8 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $cache_columns = config('database.connections.' . $builder->connection->config['name'] . '.cache_columns') ?? false;
-        $cache_columns_time = config('database.connections.' . $builder->connection->config['name'] . '.cache_columns_time') ?? false;
+        $cache_columns = config('database.connections.'.$builder->connection->config['name'].'.cache_columns') ?? false;
+        $cache_columns_time = config('database.connections.'.$builder->connection->config['name'].'.cache_columns_time') ?? false;
 
         foreach ($arrTables as $tables) {
             preg_match(
@@ -166,9 +166,10 @@ class Connection extends IlluminateConnection
             }
 
             if ($cache_columns == true) {
-                $aux = Cache::remember('sybase_columns/' . $tables . '.columns_info', $cache_columns_time, function () use ($tables) {
+                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', $cache_columns_time, function () use ($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
+
                     return $queryRes->fetchAll(PDO::FETCH_NAMED);
                 });
             } else {
@@ -182,12 +183,12 @@ class Connection extends IlluminateConnection
                 //$types[strtolower($row['name'])] = $row['type'];
                 $types[$row['name']] = $row['type'];
                 //$types[strtolower($tables.'.'.$row['name'])] = $row['type'];
-                $types[$tables . '.' . $row['name']] = $row['type'];
+                $types[$tables.'.'.$row['name']] = $row['type'];
 
-                if (!empty($alias['alias'])) {
+                if (! empty($alias['alias'])) {
                     $types[
                         //strtolower($alias['alias'].'.'.$row['name'])
-                        $alias['alias'] . '.' . $row['name']
+                        $alias['alias'].'.'.$row['name']
                     ] = $row['type'];
                 }
             }
@@ -247,7 +248,9 @@ class Connection extends IlluminateConnection
                     }
                 }
             } elseif ($w['type'] == 'between') {
-                if (count($w['values']) != 2) {return [];}
+                if (count($w['values']) != 2) {
+                    return [];
+                }
                 foreach ($w['values'] as $v) {
                     if (gettype($v) != 'object') {
                         $keys[] = $convert($w['column'], $v);
@@ -327,7 +330,7 @@ class Connection extends IlluminateConnection
      *
      * @param  string  $query
      * @param  array  $bindings
-     * @return mixed  $newBinds
+     * @return mixed $newBinds
      */
     private function compileBindings($query, $bindings)
     {
@@ -373,9 +376,9 @@ class Connection extends IlluminateConnection
                 if (is_string($bindings[$i])) {
                     $bindings[$i] = str_replace("'", "''", $bindings[$i]);
 
-                    $newQuery .= "'" . $bindings[$i] . "'";
+                    $newQuery .= "'".$bindings[$i]."'";
                 } else {
-                    if (!is_null($bindings[$i])) {
+                    if (! is_null($bindings[$i])) {
                         $newQuery .= $bindings[$i];
                     } else {
                         $newQuery .= 'null';
@@ -438,7 +441,7 @@ class Connection extends IlluminateConnection
      * Get the statement.
      *
      * @param  string  $query
-     * @param  mixed|array   $bindings
+     * @param  mixed|array  $bindings
      * @return bool
      */
     public function statement($query, $bindings = [])

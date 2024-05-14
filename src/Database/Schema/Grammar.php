@@ -197,8 +197,8 @@ class Grammar extends IlluminateGrammar
                 WHERE
                     type = 'U'
                 AND
-                    name = '" . $blueprint->getTable() . "'
-            ) DROP TABLE " . $blueprint->getTable();
+                    name = '".$blueprint->getTable()."'
+            ) DROP TABLE ".$blueprint->getTable();
     }
 
     /**
@@ -434,7 +434,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a numeric type.
      *
-     * @param \Illuminate\Support\Fluent $column
+     * @param  \Illuminate\Support\Fluent  $column
      * @return string
      */
     protected function typeNumeric(Fluent $column)
