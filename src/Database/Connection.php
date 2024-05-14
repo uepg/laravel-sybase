@@ -65,10 +65,10 @@ class Connection extends IlluminateConnection
             $this->pdo->exec('COMMIT TRAN');
         }
 
-            // If we catch an exception, we will roll back so nothing gets messed
-            // up in the database. Then we'll re-throw the exception so it can
-            // be handled how the developer sees fit for their applications.
-        catch (Exception $e) {
+        // If we catch an exception, we will roll back so nothing gets messed
+        // up in the database. Then we'll re-throw the exception so it can
+        // be handled how the developer sees fit for their applications.
+         catch (Exception $e) {
             $this->pdo->exec('ROLLBACK TRAN');
 
             throw $e;
@@ -128,14 +128,14 @@ class Connection extends IlluminateConnection
         $arrTables = [];
 
         array_push($arrTables, $builder->from);
-        if (! empty($builder->joins)) {
+        if (!empty($builder->joins)) {
             foreach ($builder->joins as $join) {
                 array_push($arrTables, $join->table);
             }
         }
 
         $wheres = [];
-		$types = [];
+        $types = [];
 
         foreach ($builder->wheres as $w) {
             switch ($w['type']) {
@@ -148,10 +148,11 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $cache_columns = env('SYBASE_CACHE_COLUMNS',true);
-        $cache_columns_time = env('SYBASE_CACHE_COLUMNS_TIME',600);
+        $cache_columns = config('database.connections.' . $builder->connection->config['name'] . '.cache_columns') ?? false;
+        $cache_columns_time = config('database.connections.' . $builder->connection->config['name'] . '.cache_columns_time') ?? false;
+
         foreach ($arrTables as $tables) {
-            preg_match (
+            preg_match(
                 "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
                 // strtolower($tables),
                 $tables,
@@ -164,8 +165,8 @@ class Connection extends IlluminateConnection
                 $tables = $alias['table'];
             }
 
-            if($cache_columns == true) {
-                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', $cache_columns_time, function() use($tables) {
+            if ($cache_columns == true) {
+                $aux = Cache::remember('sybase_columns/' . $tables . '.columns_info', $cache_columns_time, function () use ($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
                     return $queryRes->fetchAll(PDO::FETCH_NAMED);
@@ -175,18 +176,18 @@ class Connection extends IlluminateConnection
                 $queryRes = $this->getPdo()->query($queryString);
                 $aux = $queryRes->fetchAll(PDO::FETCH_NAMED);
             }
-			
-			// I don't think it's necessary to strtolower fields.
+
+            // I don't think it's necessary to strtolower fields.
             foreach ($aux as &$row) {
                 //$types[strtolower($row['name'])] = $row['type'];
                 $types[$row['name']] = $row['type'];
                 //$types[strtolower($tables.'.'.$row['name'])] = $row['type'];
-                $types[$tables.'.'.$row['name']] = $row['type'];
+                $types[$tables . '.' . $row['name']] = $row['type'];
 
-                if (! empty($alias['alias'])) {
+                if (!empty($alias['alias'])) {
                     $types[
-                    //strtolower($alias['alias'].'.'.$row['name'])
-                    $alias['alias'].'.'.$row['name']
+                        //strtolower($alias['alias'].'.'.$row['name'])
+                        $alias['alias'] . '.' . $row['name']
                     ] = $row['type'];
                 }
             }
@@ -194,9 +195,11 @@ class Connection extends IlluminateConnection
 
         $db_charset = env('DB_CHARSET');
         $app_charset = env('APPLICATION_CHARSET');
-		
-        $convert = function($column, $v) use($types, $db_charset, $app_charset) {
-            if (is_null($v)) return null;
+
+        $convert = function ($column, $v) use ($types, $db_charset, $app_charset) {
+            if (is_null($v)) {
+                return null;
+            }
 
             //$variable_type = $types[strtolower($column)];
             $variable_type = $types[$column];
@@ -204,7 +207,7 @@ class Connection extends IlluminateConnection
             if (in_array($variable_type, $this->withoutQuotes)) {
                 return $v / 1;
             } else {
-                if($db_charset && $app_charset) {
+                if ($db_charset && $app_charset) {
                     return $v == null ? null : mb_convert_encoding((string) $v, $db_charset, $app_charset);
                 } else {
                     return (string) $v;
@@ -216,7 +219,7 @@ class Connection extends IlluminateConnection
 
         if (isset($builder->values)) {
             foreach ($builder->values as $key => $value) {
-                if(gettype($value) == 'array') {
+                if (gettype($value) == 'array') {
                     foreach ($value as $k => $v) {
                         $keys[] = $convert($k, $v);
                     }
@@ -244,7 +247,7 @@ class Connection extends IlluminateConnection
                     }
                 }
             } elseif ($w['type'] == 'between') {
-                if(count($w['values']) != 2) { return []; }
+                if (count($w['values']) != 2) {return [];}
                 foreach ($w['values'] as $v) {
                     if (gettype($v) != 'object') {
                         $keys[] = $convert($w['column'], $v);
@@ -370,9 +373,9 @@ class Connection extends IlluminateConnection
                 if (is_string($bindings[$i])) {
                     $bindings[$i] = str_replace("'", "''", $bindings[$i]);
 
-                    $newQuery .= "'".$bindings[$i]."'";
+                    $newQuery .= "'" . $bindings[$i] . "'";
                 } else {
-                    if (! is_null($bindings[$i])) {
+                    if (!is_null($bindings[$i])) {
                         $newQuery .= $bindings[$i];
                     } else {
                         $newQuery .= 'null';
@@ -417,7 +420,7 @@ class Connection extends IlluminateConnection
 
             $db_charset = env('DB_CHARSET');
             $app_charset = env('APPLICATION_CHARSET');
-            if($db_charset && $app_charset) {
+            if ($db_charset && $app_charset) {
                 foreach ($result as $row) {
                     foreach ($row as $name => $col) {
                         if (is_string($col)) {

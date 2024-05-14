@@ -1,5 +1,9 @@
 # Release Notes
 
+## [3.2.2 (2024-02-12)](https://github.com/jcrodriguezt/laravel-sybase/compare/3.2.1...3.2.2)
+
+Fixed use of SYBASE_CACHE_COLUMNS and SYBASE_CACHE_COLUMNS_TIME variables inside compile function. They are called now from database.connections.yourConnection using the config helper.
+
 ## [3.2.1 (2024-02-12)](https://github.com/jcrodriguezt/laravel-sybase/compare/3.2.0...3.2.1)
 
 Removing use of strtolower in compile function for column names. This is causing issues when given that column names are case sensitive

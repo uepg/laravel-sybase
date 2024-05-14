@@ -21,7 +21,7 @@ composer require jcrodriguezt/laravel-sybase
 ## Update
 Update the following in the require section of your **composer.json**:
 ```json
-"jcrodriguezt/laravel-sybase": "~3.1"
+"jcrodriguezt/laravel-sybase": "~3.2"
 ```
 
 Update the package dependencies executing:
