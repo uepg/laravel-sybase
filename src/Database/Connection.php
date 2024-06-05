@@ -187,40 +187,52 @@ class Connection extends IlluminateConnection
 
         $keys = [];
 
+        $convert = function($column, $v) use($types) {
+            if (is_null($v)) return null;
+
+            $variable_type = $types[strtolower($column)];
+
+            if (in_array($variable_type, $this->numeric)) {
+                return $v / 1;
+            } else {
+                return (string) $v;
+            }
+        };
+
         if (isset($builder->values)) {
             foreach ($builder->values as $key => $value) {
                 if(gettype($value) == 'array') {
                     foreach ($value as $k => $v) {
-                        $keys[] = $v;
+                        $keys[] = $convert($k, $v);
                     }
                 } else {
-                    $keys[] = $value;
+                    $keys[] = $convert($key, $value);
                 }
             }
         }
 
         if (isset($builder->set)) {
             foreach ($builder->set as $k => $v) {
-                $keys[] = $v;
+                $keys[] = $convert($k, $v);
             }
         }
 
         foreach ($wheres as $w) {
             if ($w['type'] == 'Basic') {
                 if (gettype($w['value']) != 'object') {
-                    $keys[] = $w['value'];
+                    $keys[] = $convert($w['column'], $w['value']);
                 }
             } elseif ($w['type'] == 'In' || $w['type'] == 'NotIn') {
                 foreach ($w['values'] as $v) {
                     if (gettype($v) != 'object') {
-                        $keys[] = $v;
+                        $keys[] = $convert($w['column'], $v);
                     }
                 }
             } elseif ($w['type'] == 'between') {
                 if(count($w['values']) != 2) { return []; }
                 foreach ($w['values'] as $v) {
                     if (gettype($v) != 'object') {
-                        $keys[] = $v;
+                        $keys[] = $convert($k, $v);
                     }
                 }
             }
@@ -332,28 +344,20 @@ class Connection extends IlluminateConnection
         $newQuery = '';
 
         $bindings = $this->compileBindings($query, $bindings);
-
         $partQuery = explode('?', $query);
 
-        for ($i = 0; $i < count($partQuery); $i++) {
-            $newQuery .= $partQuery[$i];
+        $bindings = array_map(fn($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
+        $bindings = array_map(fn($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
 
-            if ($i < count($bindings)) {
-                if (is_string($bindings[$i])) {
-                    $bindings[$i] = str_replace("'", "''", $bindings[$i]);
-
-                    $newQuery .= "'".$bindings[$i]."'";
-                } else {
-                    if (! is_null($bindings[$i])) {
-                        $newQuery .= $bindings[$i];
-                    } else {
-                        $newQuery .= 'null';
-                    }
-                }
-            }
-        }
-
+        $newQuery = join(array_map(fn($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
+
+        $db_charset = env('DB_CHARSET');
+        $app_charset = env('APPLICATION_CHARSET');
+
+        if($db_charset && $app_charset) {
+            mb_convert_encoding($newQuery, $db_charset, $app_charset);
+        }
 
         return $newQuery;
     }
@@ -376,16 +380,24 @@ class Connection extends IlluminateConnection
                 return [];
             }
 
-            $result = [];
-
             $statement = $this->getPdo()->query($this->compileNewQuery(
                 $query,
                 $bindings
             ));
 
-            do {
-                $result += $statement->fetchAll($this->getFetchMode());
-            } while ($statement->nextRowset());
+
+            $result = $statement->fetchAll($this->getFetchMode());
+
+            $db_charset = env('DB_CHARSET');
+            $app_charset = env('APPLICATION_CHARSET');
+
+            if($db_charset && $app_charset) {
+                foreach($result as &$r) {
+                    foreach($r as $k => &$v) {
+                        $v = mb_convert_encoding($v, $app_charset, $db_charset);
+                    }
+                }
+            }
 
             return $result;
         });
