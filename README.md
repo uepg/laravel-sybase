@@ -63,13 +63,13 @@ return [
         ...
 
         'sybase' => [
-            'driver' => 'sybasease',
+            'driver' => 'sqlsrv',
             'host' => env('DB_HOST', 'sybase.myserver.com'),
             'port' => env('DB_PORT', '5000'),
             'database' => env('DB_DATABASE', 'mydatabase'),
             'username' => env('DB_USERNAME', 'user'),
             'password' => env('DB_PASSWORD', 'password'),
-            'charset' => 'utf8', // Experimental yet, prefer use the `DB_CHARSET` and `APPLICATION_CHARSET`
+            'charset' => 'utf8',
             'prefix' => '',
         ],
 
@@ -105,22 +105,6 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
 [global]
     # TDS protocol version
     tds version = 5.0
-```
-
-## Configuring the charset between the database and the application
-To configure the charset between the database and the application, add the fields `DB_CHARSET` and `APPLICATION_CHARSET` in `.env` file, see the following example:
-
-```env
-DB_CHARSET=CP850
-APPLICATION_CHARSET=UTF8
-```
-## Configuring the cache
-As the library consults table information whenever it receives a request, caching can be used to avoid excessive queries
-
-To use the cache, add the fields `SYBASE_CACHE_COLUMNS` and `SYBASE_CACHE_COLUMNS_TIME` to the `.env` file, see the following example:
-```dotenv
-SYBASE_CACHE_COLUMNS=true
-SYBASE_CACHE_COLUMNS_TIME=3600 # cache table information by `3600` seconds
 ```
 
 ## Setting to use numeric data type
