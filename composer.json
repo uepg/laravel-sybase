@@ -1,5 +1,5 @@
 {
-    "name": "uepg/laravel-sybase",
+    "name": "xbu3n0/laravel-sybase",
     "description": "Sybase based Eloquent module extension for Laravel 10.x",
     "keywords": [
         "sybase"
@@ -20,8 +20,8 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/uepg/laravel-sybase/issues",
-        "wiki": "https://github.com/uepg/laravel-sybase/wiki"
+        "issues": "https://github.com/xbu3n0/laravel-sybase/issues",
+        "wiki": "https://github.com/xbu3n0/laravel-sybase/wiki"
     },
     "require": {
         "php": ">=8.1",

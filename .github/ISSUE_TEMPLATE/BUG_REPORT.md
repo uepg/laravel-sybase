@@ -32,7 +32,7 @@ If applicable, add screenshots to help explain your problem. If no have screensh
 * Laravel: Run `php artisan --version` to show the version.
 * PHP: Run `php --version` to show the version.
 * Composer: Run `composer --version` to show the version.
-* uepg/laravel-sybase: Get the version in `composer.lock`.
+* xbu3n0/laravel-sybase: Get the version in `composer.lock`.
 
 ## Additional context
 

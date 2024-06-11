@@ -16,7 +16,7 @@ Add the following in the require section of your **composer.json**:
 
 ### Laravel >=7.x
 ```json
-"uepg/laravel-sybase": "~4.0"
+"xbu3n0/laravel-sybase": "~4.0"
 ```
 
 Update the package dependencies executing:
