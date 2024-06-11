@@ -14,23 +14,9 @@
 
 Add the following in the require section of your **composer.json**:
 
-### Laravel 5.1, 5.2, 5.3
-
+### Laravel >=7.x
 ```json
-"uepg/laravel-sybase": "~1.0"
-```
-### Laravel 5.4, 5.5, 5.6, 5.7, 5.8, 6.x, 7.x, 8.x, 9.x
-
-```json
-"uepg/laravel-sybase": "~2.0"
-```
-
-### Laravel 10.x
-
-```json
-"uepg/laravel-sybase": "~3.0" // old version
-//or The new version
-"uepg/laravel-sybase": "~4.0" // new version
+"uepg/laravel-sybase": "~4.0"
 ```
 
 Update the package dependencies executing:
