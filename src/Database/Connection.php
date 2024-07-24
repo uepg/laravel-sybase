@@ -148,6 +148,7 @@ class Connection extends IlluminateConnection
         }
 
         $cache_columns = env('SYBASE_CACHE_COLUMNS');
+        $types = [];
 
         foreach ($arrTables as $tables) {
             preg_match (
@@ -250,7 +251,8 @@ class Connection extends IlluminateConnection
      */
     private function queryString($tables)
     {
-        $explicitDB = explode('..', $tables);
+        $tables = str_replace('..', '.dbo.', $tables);
+        $explicitDB = explode('.dbo.', $tables);
 
 //        Has domain.table
         if (isset($explicitDB[1])) {
