@@ -189,7 +189,7 @@ class Connection extends IlluminateConnection
         foreach ($arrTables as $tables) {
             preg_match (
                 "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
-                strtolower($tables),
+                $tables,
                 $alias
             );
 
@@ -212,12 +212,12 @@ class Connection extends IlluminateConnection
             }
 
             foreach ($aux as &$row) {
-                $types[strtolower($row['name'])] = $row['type'];
-                $types[strtolower($tables.'.'.$row['name'])] = $row['type'];
+                $types[$row['name']] = $row['type'];
+                $types[$tables.'.'.$row['name']] = $row['type'];
 
                 if (! empty($alias['alias'])) {
                     $types[
-                    strtolower($alias['alias'].'.'.$row['name'])
+                    $alias['alias'].'.'.$row['name']
                     ] = $row['type'];
                 }
             }
@@ -228,7 +228,7 @@ class Connection extends IlluminateConnection
         $convert = function($column, $v) use($types) {
             if (is_null($v)) return null;
 
-            $variable_type = $types[strtolower($column)];
+            $variable_type = $types[$column];
 
             if (in_array($variable_type, $this->numeric)) {
                 return $v / 1;
