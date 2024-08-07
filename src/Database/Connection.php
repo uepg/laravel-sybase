@@ -41,6 +41,43 @@ class Connection extends IlluminateConnection
     ];
 
     /**
+     * @var string The application charset
+     */
+    private $appCharset;
+
+    /**
+     * @var string The database charset
+     */
+    private $dbCharset;
+
+    /**
+     * Create a new database connection instance.
+     *
+     * @param  \PDO|\Closure  $pdo
+     * @param  string  $database
+     * @param  string  $tablePrefix
+     * @param  array  $config
+     * @return void
+     */
+    public function __construct($pdo, $database = '', $tablePrefix = '', array $config = [])
+    {
+        parent::__construct($pdo, $database, $tablePrefix, $config);
+        $this->configureCharset($config);
+    }
+
+    /**
+     * Configures the encoding for the connection.
+     *
+     * @param array $config
+     * @return void
+     */
+    public function configureCharset($config = [])
+    {
+        $this->dbCharset = $config['charset'] ?? null;
+        $this->appCharset = env('APPLICATION_CHARSET');
+    }
+
+    /**
      * Execute a Closure within a transaction.
      *
      * @param  \Closure  $callback
@@ -356,11 +393,8 @@ class Connection extends IlluminateConnection
         $newQuery = join(array_map(fn($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
 
-        $db_charset = env('DB_CHARSET');
-        $app_charset = env('APPLICATION_CHARSET');
-
-        if($db_charset && $app_charset) {
-            $newQuery = mb_convert_encoding($newQuery, $db_charset, $app_charset);
+        if($this->dbCharset && $this->appCharset) {
+            $newQuery = mb_convert_encoding($newQuery, $this->dbCharset, $this->appCharset);
         }
 
         return $newQuery;
@@ -389,16 +423,12 @@ class Connection extends IlluminateConnection
                 $bindings
             ));
 
-
             $result = $statement->fetchAll($this->getFetchMode());
 
-            $db_charset = env('DB_CHARSET');
-            $app_charset = env('APPLICATION_CHARSET');
-
-            if($db_charset && $app_charset) {
+            if($this->dbCharset && $this->appCharset) {
                 foreach($result as &$r) {
                     foreach($r as $k => &$v) {
-                        $v = gettype($v) === 'string' ? mb_convert_encoding($v, $app_charset, $db_charset) : $v;
+                        $v = gettype($v) === 'string' ? mb_convert_encoding($v, $this->appCharset, $this->dbCharset) : $v;
                     }
                 }
             }
