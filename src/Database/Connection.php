@@ -147,7 +147,9 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $cache_columns = env('SYBASE_CACHE_COLUMNS');
+        $cache_tables = env('SYBASE_CACHE_TABLES');
+        $cache = !key_exists('cache_tables', $builder->connection->config) || $builder->connection->config['cache_tables'];
+
         $types = [];
 
         foreach ($arrTables as $tables) {
@@ -163,8 +165,8 @@ class Connection extends IlluminateConnection
                 $tables = $alias['table'];
             }
 
-            if($cache_columns == true) {
-                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_COLUMNS_TIME') ?? 600, function() use($tables) {
+            if($cache_tables && $cache) {
+                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_TABLES_TIME') ?? 3600, function() use($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
                     return $queryRes->fetchAll(PDO::FETCH_NAMED);
@@ -359,7 +361,7 @@ class Connection extends IlluminateConnection
         $newQuery = join(array_map(fn($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
 
-        $db_charset = env('DB_CHARSET');
+        $db_charset = env('DATABASE_CHARSET');
         $app_charset = env('APPLICATION_CHARSET');
 
         if($db_charset && $app_charset) {
@@ -395,7 +397,7 @@ class Connection extends IlluminateConnection
 
             $result = $statement->fetchAll($this->getFetchMode());
 
-            $db_charset = env('DB_CHARSET');
+            $db_charset = env('DATABASE_CHARSET');
             $app_charset = env('APPLICATION_CHARSET');
 
             if($db_charset && $app_charset) {

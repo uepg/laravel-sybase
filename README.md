@@ -57,8 +57,9 @@ return [
             'database' => env('DB_DATABASE', 'mydatabase'),
             'username' => env('DB_USERNAME', 'user'),
             'password' => env('DB_PASSWORD', 'password'),
-            'charset' => 'utf8', // Experimental yet, prefer use the `DB_CHARSET` and `APPLICATION_CHARSET`
+            'charset' => 'utf8',
             'prefix' => '',
+            'cache' => true // By default it caches on all connections, if you want some connection not remembered assign `false` (Recommended when modification is performed on tables frequently [development])
         ],
 
         ...
@@ -96,19 +97,19 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
 ```
 
 ## Configuring the charset between the database and the application
-To configure the charset between the database and the application, add the fields `DB_CHARSET` and `APPLICATION_CHARSET` in `.env` file, see the following example:
+To configure the charset between the database and the application, add the fields `DATABASE_CHARSET` and `APPLICATION_CHARSET` in `.env` file, see the following example:
 
 ```env
-DB_CHARSET=CP850
+DATABASE_CHARSET=CP850
 APPLICATION_CHARSET=UTF8
 ```
 ## Configuring the cache
 As the library consults table information whenever it receives a request, caching can be used to avoid excessive queries
 
-To use the cache, add the fields `SYBASE_CACHE_COLUMNS` and `SYBASE_CACHE_COLUMNS_TIME` to the `.env` file, see the following example:
+To use the cache, add the fields `SYBASE_CACHE_TABLES` and `SYBASE_CACHE_TABLES_TIME` to the `.env` file, see the following example:
 ```dotenv
-SYBASE_CACHE_COLUMNS=true
-SYBASE_CACHE_COLUMNS_TIME=3600 # cache table information by `3600` seconds
+SYBASE_CACHE_TABLES=true
+SYBASE_CACHE_TABLES_TIME=3600 # cache table information by `3600` seconds
 ```
 
 ## Setting to use numeric data type
