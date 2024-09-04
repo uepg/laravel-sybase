@@ -361,8 +361,8 @@ class Connection extends IlluminateConnection
         $newQuery = join(array_map(fn($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
 
-        $db_charset = env('DATABASE_CHARSET');
-        $app_charset = env('APPLICATION_CHARSET');
+        $db_charset = env('SYBASE_DATABASE_CHARSET');
+        $app_charset = env('SYBASE_APPLICATION_CHARSET');
 
         if($db_charset && $app_charset) {
             $newQuery = mb_convert_encoding($newQuery, $db_charset, $app_charset);
@@ -397,8 +397,8 @@ class Connection extends IlluminateConnection
 
             $result = $statement->fetchAll($this->getFetchMode());
 
-            $db_charset = env('DATABASE_CHARSET');
-            $app_charset = env('APPLICATION_CHARSET');
+            $db_charset = env('SYBASE_DATABASE_CHARSET');
+            $app_charset = env('SYBASE_APPLICATION_CHARSET');
 
             if($db_charset && $app_charset) {
                 foreach($result as &$r) {

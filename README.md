@@ -97,11 +97,11 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
 ```
 
 ## Configuring the charset between the database and the application
-To configure the charset between the database and the application, add the fields `DATABASE_CHARSET` and `APPLICATION_CHARSET` in `.env` file, see the following example:
+To configure the charset between the database and the application, add the fields `SYBASE_DATABASE_CHARSET` and `SYBASE_APPLICATION_CHARSET` in `.env` file, see the following example:
 
 ```env
-DATABASE_CHARSET=CP850
-APPLICATION_CHARSET=UTF8
+SYBASE_DATABASE_CHARSET=CP850
+SYBASE_APPLICATION_CHARSET=UTF8
 ```
 ## Configuring the cache
 As the library consults table information whenever it receives a request, caching can be used to avoid excessive queries
