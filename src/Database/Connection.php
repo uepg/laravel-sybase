@@ -389,13 +389,22 @@ class Connection extends IlluminateConnection
                 return [];
             }
 
-            $statement = $this->getPdo()->query($this->compileNewQuery(
+            $statement = $this->getPdo()->prepare($this->compileNewQuery(
                 $query,
                 $bindings
             ));
 
+            $statement->execute();
 
-            $result = $statement->fetchAll($this->getFetchMode());
+            $result = [];
+
+            try {
+                do {
+                    $result += $statement->fetchAll($this->getFetchMode());
+                } while ($statement->nextRowset());
+            } catch (\Exception $e) {}
+
+            $result = [...$result];
 
             $db_charset = env('SYBASE_DATABASE_CHARSET');
             $app_charset = env('SYBASE_APPLICATION_CHARSET');
