@@ -93,6 +93,69 @@ class Grammar extends IlluminateGrammar
         return 'ALTER TABLE ' . $table . ' ADD ' . implode(', ', $columns);
     }
 
+
+     /**
+     * @param $table
+     * @return string
+     * Functions do compile the columns of a given table
+     */
+    public function compileColumns($table)
+    {
+        return "SELECT
+           col.name,
+           type.name AS type_name,
+           col.length AS length,
+           col.prec AS precision,
+           col.scale AS places,
+           CASE WHEN (col.status & 0x08) = 0x08 THEN 'YES' ELSE 'NO' END AS nullable,
+           def.text AS [default],
+           CASE WHEN (col.status & 0x80) = 0x80 THEN 'YES' ELSE 'NO' END AS autoincrement,
+           NULL AS collation, -- Sybase não fornece suporte direto para collation em colunas
+           com.text AS comment -- Comentários associados à coluna, se existirem
+       FROM
+           sysobjects obj
+               JOIN
+           syscolumns col ON obj.id = col.id
+               JOIN
+           systypes type ON col.usertype = type.usertype
+               LEFT JOIN
+           syscomments def ON col.cdefault = def.id -- Valores padrão da coluna
+               LEFT JOIN
+           syscomments com ON col.colid = com.colid -- Comentários associados às colunas (se habilitados)
+       WHERE
+           obj.type IN ('U', 'V') -- 'U' para tabelas, 'V' para visões
+         AND obj.name = '$table'
+         AND user_name(obj.uid) = user_name()
+       ORDER BY
+           col.colid";
+    }
+
+    /**
+     * @param $table
+     * @return string
+     * Functions that return the indexes of a given table
+     */
+    public function compileIndexes($table)
+    {
+        return "SELECT
+        DISTINCT i.name,
+                 index_col(o.name, i.indid, c.colid) AS column_name,
+                 CASE WHEN i.status & 2048 = 2048 THEN 'YES' ELSE 'NO' END AS is_primary,
+                 CASE WHEN i.status & 2 = 2 THEN 'YES' ELSE 'NO' END AS is_unique
+    FROM
+        sysobjects o
+            INNER JOIN sysindexes i ON i.id = o.id
+            INNER JOIN syscolumns c ON c.id = o.id
+    WHERE
+        o.type = 'U'  -- Apenas tabelas de usuário
+      AND o.name = '$table'  -- Nome da tabela alvo
+      AND i.indid > 0  -- Índices não-triviais
+      AND i.status & 2 = 2  -- Apenas índices do sistema (ajuste se necessário)
+      AND index_col(o.name, i.indid, c.colid) IS NOT NULL  -- Verifica colunas válidas associadas ao índice
+    ORDER BY
+        i.name, column_name";
+    }
+    
     /**
      * Compile a primary key command.
      *
