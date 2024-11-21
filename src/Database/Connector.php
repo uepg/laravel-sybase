@@ -12,7 +12,7 @@ class Connector extends SqlServerConnector
 
         $connection = $this->createConnection($this->getDsn($config), $config, $options);
 
-        if(array_key_exists('charset', $config) && $config['charset'] != '') {
+        if (array_key_exists('charset', $config) && $config['charset'] != '') {
             $connection->prepare("set char_convert '{$config['charset']}'")->execute();
         }
 
