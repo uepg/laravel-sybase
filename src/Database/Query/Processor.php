@@ -19,7 +19,7 @@ class Processor extends SqlServerProcessor
         foreach ($indexes as $index) {
             $aux = [];
             $aux['name'] = $index->name;
-            $aux['columns'] = $this->concatenaCampos($results, $index->name);
+            $aux['columns'] = $this->getColumnsFromIndexResult($results, $index->name);
             $aux['unique'] = $index->is_unique;
             $aux['primary'] = $index->is_primary;
             array_push($array, $aux);
