@@ -14,23 +14,9 @@
 
 Add the following in the require section of your **composer.json**:
 
-### Laravel 5.1, 5.2, 5.3
-
+### Laravel >=7.x
 ```json
-"uepg/laravel-sybase": "~1.0"
-```
-### Laravel 5.4, 5.5, 5.6, 5.7, 5.8, 6.x, 7.x, 8.x, 9.x
-
-```json
-"uepg/laravel-sybase": "~2.0"
-```
-
-### Laravel 10.x
-
-```json
-"uepg/laravel-sybase": "~3.0" // old version
-//or The new version
-"uepg/laravel-sybase": "~4.0" // new version
+"xbu3n0/laravel-sybase": "~4.0"
 ```
 
 Update the package dependencies executing:
@@ -71,8 +57,9 @@ return [
             'database' => env('DB_DATABASE', 'mydatabase'),
             'username' => env('DB_USERNAME', 'user'),
             'password' => env('DB_PASSWORD', 'password'),
-            'charset' => 'utf8', // Experimental yet, prefer use the `DB_CHARSET` and `APPLICATION_CHARSET`
+            'charset' => 'utf8',
             'prefix' => '',
+            'cache' => true // By default it caches on all connections, if you want some connection not remembered assign `false` (Recommended when modification is performed on tables frequently [development])
         ],
 
         ...
@@ -110,19 +97,19 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
 ```
 
 ## Configuring the charset between the database and the application
-To configure the charset between the database and the application, add the fields `DB_CHARSET` and `APPLICATION_CHARSET` in `.env` file, see the following example:
+To configure the charset between the database and the application, add the fields `SYBASE_DATABASE_CHARSET` and `SYBASE_APPLICATION_CHARSET` in `.env` file, see the following example:
 
 ```env
-DB_CHARSET=CP850
-APPLICATION_CHARSET=UTF8
+SYBASE_DATABASE_CHARSET=CP850
+SYBASE_APPLICATION_CHARSET=UTF8
 ```
 ## Configuring the cache
 As the library consults table information whenever it receives a request, caching can be used to avoid excessive queries
 
-To use the cache, add the fields `SYBASE_CACHE_COLUMNS` and `SYBASE_CACHE_COLUMNS_TIME` to the `.env` file, see the following example:
+To use the cache, add the fields `SYBASE_CACHE_TABLES` and `SYBASE_CACHE_TABLES_TIME` to the `.env` file, see the following example:
 ```dotenv
-SYBASE_CACHE_COLUMNS=true
-SYBASE_CACHE_COLUMNS_TIME=3600 # cache table information by `3600` seconds
+SYBASE_CACHE_TABLES=true
+SYBASE_CACHE_TABLES_TIME=3600 # cache table information by `3600` seconds
 ```
 
 ## Setting to use numeric data type

@@ -65,9 +65,9 @@ class Connection extends IlluminateConnection
             $this->pdo->exec('COMMIT TRAN');
         }
 
-        // If we catch an exception, we will roll back so nothing gets messed
-        // up in the database. Then we'll re-throw the exception so it can
-        // be handled how the developer sees fit for their applications.
+            // If we catch an exception, we will roll back so nothing gets messed
+            // up in the database. Then we'll re-throw the exception so it can
+            // be handled how the developer sees fit for their applications.
         catch (Exception $e) {
             $this->pdo->exec('ROLLBACK TRAN');
 
@@ -147,10 +147,13 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $cache_columns = env('SYBASE_CACHE_COLUMNS');
+        $cache_tables = env('SYBASE_CACHE_TABLES');
+        $cache = !key_exists('cache_tables', $builder->connection->config) || $builder->connection->config['cache_tables'];
+
+        $types = [];
 
         foreach ($arrTables as $tables) {
-            preg_match(
+            preg_match (
                 "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
                 strtolower($tables),
                 $alias
@@ -162,11 +165,10 @@ class Connection extends IlluminateConnection
                 $tables = $alias['table'];
             }
 
-            if ($cache_columns == true) {
-                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_COLUMNS_TIME') ?? 600, function () use ($tables) {
+            if($cache_tables && $cache) {
+                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_TABLES_TIME') ?? 3600, function() use($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
-
                     return $queryRes->fetchAll(PDO::FETCH_NAMED);
                 });
             } else {
@@ -189,10 +191,8 @@ class Connection extends IlluminateConnection
 
         $keys = [];
 
-        $convert = function ($column, $v) use ($types) {
-            if (is_null($v)) {
-                return null;
-            }
+        $convert = function($column, $v) use($types) {
+            if (is_null($v)) return null;
 
             $variable_type = $types[strtolower($column)];
 
@@ -205,7 +205,7 @@ class Connection extends IlluminateConnection
 
         if (isset($builder->values)) {
             foreach ($builder->values as $key => $value) {
-                if (gettype($value) === 'array') {
+                if(gettype($value) === 'array') {
                     foreach ($value as $k => $v) {
                         $keys[] = $convert($k, $v);
                     }
@@ -233,9 +233,7 @@ class Connection extends IlluminateConnection
                     }
                 }
             } elseif ($w['type'] == 'between') {
-                if (count($w['values']) != 2) {
-                    return [];
-                }
+                if(count($w['values']) != 2) { return []; }
                 foreach ($w['values'] as $v) {
                     if (gettype($v) !== 'object') {
                         $keys[] = $convert($k, $v);
@@ -255,7 +253,8 @@ class Connection extends IlluminateConnection
      */
     private function queryString($tables)
     {
-        $explicitDB = explode('..', $tables);
+        $tables = str_replace('..', '.dbo.', $tables);
+        $explicitDB = explode('.dbo.', $tables);
 
 //        Has domain.table
         if (isset($explicitDB[1])) {
@@ -317,7 +316,7 @@ class Connection extends IlluminateConnection
      *
      * @param  string  $query
      * @param  array  $bindings
-     * @return mixed $newBinds
+     * @return mixed  $newBinds
      */
     private function compileBindings($query, $bindings)
     {
@@ -355,16 +354,17 @@ class Connection extends IlluminateConnection
         $bindings = $this->compileBindings($query, $bindings);
         $partQuery = explode('?', $query);
 
-        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
-        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
+        $bindings = array_map(fn($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
+        $bindings = array_map(fn($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
+        $bindings = array_map(fn($v) => gettype($v) === 'NULL' ? 'NULL' : $v, $bindings);
 
-        $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
+        $newQuery = join(array_map(fn($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
 
-        $db_charset = env('DB_CHARSET');
-        $app_charset = env('APPLICATION_CHARSET');
+        $db_charset = env('SYBASE_DATABASE_CHARSET');
+        $app_charset = env('SYBASE_APPLICATION_CHARSET');
 
-        if ($db_charset && $app_charset) {
+        if($db_charset && $app_charset) {
             $newQuery = mb_convert_encoding($newQuery, $db_charset, $app_charset);
         }
 
@@ -389,19 +389,29 @@ class Connection extends IlluminateConnection
                 return [];
             }
 
-            $statement = $this->getPdo()->query($this->compileNewQuery(
+            $statement = $this->getPdo()->prepare($this->compileNewQuery(
                 $query,
                 $bindings
             ));
 
-            $result = $statement->fetchAll($this->getFetchMode());
+            $statement->execute();
 
-            $db_charset = env('DB_CHARSET');
-            $app_charset = env('APPLICATION_CHARSET');
+            $result = [];
 
-            if ($db_charset && $app_charset) {
-                foreach ($result as &$r) {
-                    foreach ($r as $k => &$v) {
+            try {
+                do {
+                    $result += $statement->fetchAll($this->getFetchMode());
+                } while ($statement->nextRowset());
+            } catch (\Exception $e) {}
+
+            $result = [...$result];
+
+            $db_charset = env('SYBASE_DATABASE_CHARSET');
+            $app_charset = env('SYBASE_APPLICATION_CHARSET');
+
+            if($db_charset && $app_charset) {
+                foreach($result as &$r) {
+                    foreach($r as $k => &$v) {
                         $v = gettype($v) === 'string' ? mb_convert_encoding($v, $app_charset, $db_charset) : $v;
                     }
                 }
@@ -415,7 +425,7 @@ class Connection extends IlluminateConnection
      * Get the statement.
      *
      * @param  string  $query
-     * @param  mixed|array  $bindings
+     * @param  mixed|array   $bindings
      * @return bool
      */
     public function statement($query, $bindings = [])
