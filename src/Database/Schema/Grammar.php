@@ -42,7 +42,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the query to determine the list of columns.
      *
-     * @param string $table
+     * @param  string  $table
      * @return string
      */
     public function compileColumnExists(string $table)
@@ -64,15 +64,15 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a create table command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileCreate(Blueprint $blueprint, Fluent $command)
     {
         $columns = implode(', ', $this->getColumns($blueprint));
 
-        return 'CREATE TABLE ' . $this->wrapTable($blueprint) . " (
+        return 'CREATE TABLE '.$this->wrapTable($blueprint)." (
             $columns
         )";
     }
@@ -80,8 +80,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a create table command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileAdd(Blueprint $blueprint, Fluent $command)
@@ -90,14 +90,13 @@ class Grammar extends IlluminateGrammar
 
         $columns = $this->getColumns($blueprint);
 
-        return 'ALTER TABLE ' . $table . ' ADD ' . implode(', ', $columns);
+        return 'ALTER TABLE '.$table.' ADD '.implode(', ', $columns);
     }
 
-
-     /**
-     * @param $table
+    /**
+     * @param  $table
      * @return string
-     * Functions do compile the columns of a given table
+     *                Functions do compile the columns of a given table
      */
     public function compileColumns($table)
     {
@@ -131,9 +130,9 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
-     * @param $table
+     * @param  $table
      * @return string
-     * Functions that return the indexes of a given table
+     *                Functions that return the indexes of a given table
      */
     public function compileIndexes($table)
     {
@@ -155,12 +154,12 @@ class Grammar extends IlluminateGrammar
     ORDER BY
         i.name, column_name";
     }
-    
+
     /**
      * Compile a primary key command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compilePrimary(Blueprint $blueprint, Fluent $command)
@@ -180,7 +179,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Verify if $str length is lower to 30 characters.
      *
-     * @param string $str
+     * @param  string  $str
      * @return string
      */
     public function limit30Characters(string $str)
@@ -197,8 +196,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a unique key command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileUnique(Blueprint $blueprint, Fluent $command)
@@ -215,8 +214,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a plain index key command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileIndex(Blueprint $blueprint, Fluent $command)
@@ -233,20 +232,20 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop table command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDrop(Blueprint $blueprint, Fluent $command)
     {
-        return 'DROP TABLE ' . $this->wrapTable($blueprint);
+        return 'DROP TABLE '.$this->wrapTable($blueprint);
     }
 
     /**
      * Compile a drop table (if exists) command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropIfExists(Blueprint $blueprint, Fluent $command)
@@ -260,15 +259,15 @@ class Grammar extends IlluminateGrammar
                 WHERE
                     type = 'U'
                 AND
-                    name = '" . $blueprint->getTable() . "'
-            ) DROP TABLE " . $blueprint->getTable();
+                    name = '".$blueprint->getTable()."'
+            ) DROP TABLE ".$blueprint->getTable();
     }
 
     /**
      * Compile a drop column command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropColumn(Blueprint $blueprint, Fluent $command)
@@ -277,15 +276,15 @@ class Grammar extends IlluminateGrammar
 
         $table = $this->wrapTable($blueprint);
 
-        return 'ALTER TABLE ' . $table .
-            ' DROP COLUMN ' . implode(', ', $columns);
+        return 'ALTER TABLE '.$table.
+            ' DROP COLUMN '.implode(', ', $columns);
     }
 
     /**
      * Compile a drop primary key command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropPrimary(Blueprint $blueprint, Fluent $command)
@@ -298,8 +297,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop unique key command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropUnique(Blueprint $blueprint, Fluent $command)
@@ -312,8 +311,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop index command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropIndex(Blueprint $blueprint, Fluent $command)
@@ -326,8 +325,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop foreign key command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropForeign(Blueprint $blueprint, Fluent $command)
@@ -340,21 +339,21 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a rename table command.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileRename(Blueprint $blueprint, Fluent $command)
     {
         $from = $this->wrapTable($blueprint);
 
-        return "sp_rename {$from}, " . $this->wrapTable($command->to);
+        return "sp_rename {$from}, ".$this->wrapTable($command->to);
     }
 
     /**
      * Create the column definition for a char type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeChar(Fluent $column)
@@ -365,7 +364,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a string type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeString(Fluent $column)
@@ -376,7 +375,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a text type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeText(Fluent $column)
@@ -387,7 +386,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a medium text type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeMediumText(Fluent $column)
@@ -398,7 +397,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a long text type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeLongText(Fluent $column)
@@ -409,7 +408,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a integer type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeInteger(Fluent $column)
@@ -420,7 +419,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a big integer type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeBigInteger(Fluent $column)
@@ -431,7 +430,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a medium integer type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeMediumInteger(Fluent $column)
@@ -442,7 +441,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a tiny integer type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTinyInteger(Fluent $column)
@@ -453,7 +452,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a small integer type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeSmallInteger(Fluent $column)
@@ -464,7 +463,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a float type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeFloat(Fluent $column)
@@ -475,7 +474,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a double type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDouble(Fluent $column)
@@ -486,7 +485,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a decimal type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDecimal(Fluent $column)
@@ -497,7 +496,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a numeric type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeNumeric(Fluent $column)
@@ -508,7 +507,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a boolean type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeBoolean(Fluent $column)
@@ -519,7 +518,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for an enum type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeEnum(Fluent $column)
@@ -530,7 +529,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a json type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeJson(Fluent $column)
@@ -541,7 +540,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a jsonb type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeJsonb(Fluent $column)
@@ -552,7 +551,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a date type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDate(Fluent $column)
@@ -563,7 +562,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a date-time type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDateTime(Fluent $column)
@@ -574,7 +573,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a date-time type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDateTimeTz(Fluent $column)
@@ -585,7 +584,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a time type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTime(Fluent $column)
@@ -596,7 +595,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a time type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimeTz(Fluent $column)
@@ -607,7 +606,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a timestamp type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimestamp(Fluent $column)
@@ -620,7 +619,7 @@ class Grammar extends IlluminateGrammar
      *
      * @link https://msdn.microsoft.com/en-us/library/bb630289(v=sql.120).aspx
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimestampTz(Fluent $column)
@@ -631,7 +630,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a binary type.
      *
-     * @param Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeBinary(Fluent $column)
@@ -642,8 +641,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Get the SQL for a nullable column modifier.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $column
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $column
      * @return string|null
      */
     protected function modifyNullable(Blueprint $blueprint, Fluent $column)
@@ -654,22 +653,22 @@ class Grammar extends IlluminateGrammar
     /**
      * Get the SQL for a default column modifier.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $column
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $column
      * @return string|null
      */
     protected function modifyDefault(Blueprint $blueprint, Fluent $column)
     {
-        if (!is_null($column->default)) {
-            return ' default ' . $this->getDefaultValue($column->default);
+        if (! is_null($column->default)) {
+            return ' default '.$this->getDefaultValue($column->default);
         }
     }
 
     /**
      * Get the SQL for an auto-increment column modifier.
      *
-     * @param Blueprint $blueprint
-     * @param Fluent $column
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $column
      * @return string|null
      */
     protected function modifyIncrement(Blueprint $blueprint, Fluent $column)
