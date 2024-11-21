@@ -66,7 +66,6 @@ class Grammar extends IlluminateGrammar
      *  SELECT B.name, 'another column'
      *  FROM B
      *  WHERE B.id = 1
-     *
      */
     /**
      * Compile an insert statement into SQL.
@@ -124,7 +123,6 @@ class Grammar extends IlluminateGrammar
         $columns = $this->compileUpdateColumns($query, $values);
 
         $where = $this->compileWheres($query);
-
 
         return trim(
             isset($query->joins)
@@ -224,7 +222,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileOffset(Builder $query, $offset)
     {
-        if($offset > 0) {
+        if ($offset > 0) {
             return 'rows offset '.$offset;
         }
 

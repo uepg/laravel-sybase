@@ -8,10 +8,9 @@ use Uepg\LaravelSybase\Database\Schema\Blueprint;
 
 class GeneralTest extends TestCase
 {
-
     public function test_if_table_is_corrrectly_created()
     {
-        if(!Schema::hasTable('test123')) {
+        if (! Schema::hasTable('test123')) {
             Schema::create('test123', function (Blueprint $table) {
                 $table->increments('id');
                 $table->string('test');

@@ -21,25 +21,23 @@ class TestCase extends \Orchestra\Testbench\TestCase
     /**
      * Get package providers.
      *
-     * @param Application $app
-     *
+     * @param  Application  $app
      * @return array<int, class-string<ServiceProvider>>
      */
     protected function getPackageProviders($app)
     {
-        return ['Uepg\LaravelSybase\SybaseServiceProvider',];
+        return ['Uepg\LaravelSybase\SybaseServiceProvider'];
     }
 
     /**
      * Define environment setup.
      *
-     * @param Application $app
+     * @param  Application  $app
      * @return void
      */
     protected function defineEnvironment($app)
     {
         tap($app->make('config'), function (Repository $config) {
-
             $config->set('database.default', 'sybase');
             $config->set('database.connections.sybase', [
                 'driver' => 'sybasease',
@@ -51,7 +49,7 @@ class TestCase extends \Orchestra\Testbench\TestCase
                 'charset' => 'utf8',
                 'prefix' => '',
                 'prefix_indexes' => true,
-                'options' => array(\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION)
+                'options' => [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION],
             ]);
         });
     }
