@@ -48,17 +48,18 @@ class Grammar extends IlluminateGrammar
     public function compileColumnExists(string $table)
     {
         return "
-            SELECT
-                col.name
-            FROM
-                sys.columns AS col
-            JOIN
-                sys.objects AS obj
-            ON
-                col.object_id = obj.object_id
-            WHERE
-                obj.type = 'U' AND
-                obj.name = '$table'";
+                   SELECT
+            col.name
+        FROM
+            syscolumns col noholdlock
+        JOIN
+            sysobjects obj noholdlock
+        ON
+            col.id = obj.id
+        WHERE
+            obj.type = 'U' AND
+            obj.name = '$table';
+";
     }
 
     /**
@@ -112,15 +113,15 @@ class Grammar extends IlluminateGrammar
            NULL AS collation, -- Sybase não fornece suporte direto para collation em colunas
            com.text AS comment -- Comentários associados à coluna, se existirem
        FROM
-           sysobjects obj
+           sysobjects obj noholdlock
                JOIN
-           syscolumns col ON obj.id = col.id
+           syscolumns col noholdlock ON obj.id = col.id
                JOIN
-           systypes type ON col.usertype = type.usertype
+           systypes type noholdlock ON col.usertype = type.usertype
                LEFT JOIN
-           syscomments def ON col.cdefault = def.id -- Valores padrão da coluna
+           syscomments def noholdlock ON col.cdefault = def.id -- Valores padrão da coluna
                LEFT JOIN
-           syscomments com ON col.colid = com.colid -- Comentários associados às colunas (se habilitados)
+           syscomments com  noholdlock ON col.colid = com.colid -- Comentários associados às colunas (se habilitados)
        WHERE
            obj.type IN ('U', 'V') -- 'U' para tabelas, 'V' para visões
          AND obj.name = '$table'
@@ -142,9 +143,9 @@ class Grammar extends IlluminateGrammar
                  CASE WHEN i.status & 2048 = 2048 THEN 'YES' ELSE 'NO' END AS is_primary,
                  CASE WHEN i.status & 2 = 2 THEN 'YES' ELSE 'NO' END AS is_unique
     FROM
-        sysobjects o
-            INNER JOIN sysindexes i ON i.id = o.id
-            INNER JOIN syscolumns c ON c.id = o.id
+        sysobjects o noholdlock
+            INNER JOIN sysindexes i noholdlock ON i.id = o.id
+            INNER JOIN syscolumns c noholdlock ON c.id = o.id
     WHERE
         o.type = 'U'  -- Apenas tabelas de usuário
       AND o.name = '$table'  -- Nome da tabela alvo
