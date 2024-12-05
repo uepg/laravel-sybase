@@ -264,55 +264,32 @@ class Connection extends IlluminateConnection
 //        Has domain.table
         if (isset($explicitDB[1])) {
             return <<<SQL
-                SELECT
-                    a.name,
-                    st.name AS type
-                FROM
-                    {$explicitDB[0]}..syscolumns a,
-                    {$explicitDB[0]}..systypes b,
-                    {$explicitDB[0]}..systypes s,
-                    {$explicitDB[0]}..systypes st
-                WHERE
-                    a.usertype = b.usertype AND
-                    s.usertype = a.usertype AND
-                    s.type = st.type AND
-                    st.name NOT IN (
-                        'timestamp',
-                        'sysname',
-                        'longsysname',
-                        'nchar',
-                        'nvarchar'
-                    ) AND
-                    st.usertype < 100 AND
-                    object_name (
-                        a.id,
-                        db_id ('{$explicitDB[0]}')
-                    ) = '{$explicitDB[1]}'
-                SQL;
+            SELECT
+                syscolumns.name,
+                systypes.name AS type
+            FROM
+                {$explicitDB[0]}..syscolumns noholdlock
+            JOIN
+                {$explicitDB[0]}..systypes noholdlock ON systypes.usertype = syscolumns.usertype
+            WHERE
+                systypes.name NOT IN ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
+                AND systypes.usertype < 100
+                AND object_name(syscolumns.id, db_id('{$explicitDB[0]}')) = '{$explicitDB[1]}'
+            SQL;
         } else {
             return <<<SQL
-                SELECT
-                    a.name,
-                    st.name AS type
-                FROM
-                    syscolumns a,
-                    systypes b,
-                    systypes s,
-                    systypes st
-                WHERE
-                    a.usertype = b.usertype AND
-                    s.usertype = a.usertype AND
-                    s.type = st.type AND
-                    st.name NOT IN (
-                        'timestamp',
-                        'sysname',
-                        'longsysname',
-                        'nchar',
-                        'nvarchar'
-                    ) AND
-                    st.usertype < 100 AND
-                    object_name (a.id) = '{$tables}'
-                SQL;
+                    SELECT
+                syscolumns.name,
+                systypes.name AS type
+            FROM
+                syscolumns
+            JOIN
+                systypes ON systypes.usertype = syscolumns.usertype
+            WHERE
+                systypes.name NOT IN ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
+                AND systypes.usertype < 100
+            AND object_name(syscolumns.id) = '{$tables}'
+            SQL;
         }
     }
 
