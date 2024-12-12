@@ -268,9 +268,9 @@ class Connection extends IlluminateConnection
                 syscolumns.name,
                 systypes.name AS type
             FROM
-                {$explicitDB[0]}..syscolumns noholdlock
+                {$explicitDB[0]}..syscolumns as syscolumns noholdlock
             JOIN
-                {$explicitDB[0]}..systypes noholdlock ON systypes.usertype = syscolumns.usertype
+                {$explicitDB[0]}..systypes as systypes noholdlock ON systypes.usertype = syscolumns.usertype
             WHERE
                 systypes.name NOT IN ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
                 AND systypes.usertype < 100
