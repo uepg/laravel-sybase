@@ -59,7 +59,7 @@ return [
             'password' => env('DB_PASSWORD', 'password'),
             'charset' => 'utf8',
             'prefix' => '',
-            'cache' => true // By default it caches on all connections, if you want some connection not remembered assign `false` (Recommended when modification is performed on tables frequently [development])
+            'cache_tables' => true
         ],
 
         ...
@@ -106,9 +106,8 @@ SYBASE_APPLICATION_CHARSET=UTF8
 ## Configuring the cache
 As the library consults table information whenever it receives a request, caching can be used to avoid excessive queries
 
-To use the cache, add the fields `SYBASE_CACHE_TABLES` and `SYBASE_CACHE_TABLES_TIME` to the `.env` file, see the following example:
+To use the cache, add the property `cache_tables` and `SYBASE_CACHE_TABLES_TIME` to the `.env` file, the default time for cache is 1 hour, see the following example:
 ```dotenv
-SYBASE_CACHE_TABLES=true
 SYBASE_CACHE_TABLES_TIME=3600 # cache table information by `3600` seconds
 ```
 
