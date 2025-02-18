@@ -59,7 +59,8 @@ return [
             'password' => env('DB_PASSWORD', 'password'),
             'charset' => 'utf8',
             'prefix' => '',
-            'cache' => true // By default it caches on all connections, if you want some connection not remembered assign `false` (Recommended when modification is performed on tables frequently [development])
+            'cache_tables' => true,
+            'cache_time' => 3600
         ],
 
         ...
@@ -97,19 +98,30 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
 ```
 
 ## Configuring the charset between the database and the application
-To configure the charset between the database and the application, add the fields `SYBASE_DATABASE_CHARSET` and `SYBASE_APPLICATION_CHARSET` in `.env` file, see the following example:
+This package offers to method to charset conversion, it can be converted in application layer or in database layer, we offered both methods because it can be useful for debugging, to config the application layer conversion you need to set up the following entries on the `database.php` file. You can view an example of the application encoding setup below:
 
-```env
-SYBASE_DATABASE_CHARSET=CP850
-SYBASE_APPLICATION_CHARSET=UTF8
+```database
+'sybase' =>
+    [
+        'application_encoding' => true,
+        'application_charset' => '',
+        'sybase_database_charset' => ''
+    ],
 ```
+
+```charset
+     'charset' => 'utf8',
+```
+
+To use the database layer conversion add the property charset to connection configuration on `database.php`
+
 ## Configuring the cache
 As the library consults table information whenever it receives a request, caching can be used to avoid excessive queries
 
-To use the cache, add the fields `SYBASE_CACHE_TABLES` and `SYBASE_CACHE_TABLES_TIME` to the `.env` file, see the following example:
+To use the cache, add the property `cache_tables` to the database.php connection configuration, you can customize the time of the cache with the property `cache_time` in the same configuration
 ```dotenv
-SYBASE_CACHE_TABLES=true
-SYBASE_CACHE_TABLES_TIME=3600 # cache table information by `3600` seconds
+        'cache_tables' => true,
+        'cache_time' => 3600
 ```
 
 ## Setting to use numeric data type

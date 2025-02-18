@@ -147,8 +147,7 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $cache_tables = env('SYBASE_CACHE_TABLES');
-        $cache = ! key_exists('cache_tables', $builder->connection->config) || $builder->connection->config['cache_tables'];
+        $cache = $builder->connection->config['cache_tables'];
 
         $types = [];
 
@@ -165,7 +164,7 @@ class Connection extends IlluminateConnection
                 $tables = $alias['table'];
             }
 
-            if ($cache_tables && $cache) {
+            if ($cache) {
                 $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_TABLES_TIME') ?? 3600, function () use ($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
@@ -342,13 +341,16 @@ class Connection extends IlluminateConnection
 
         $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
-
-        $db_charset = env('SYBASE_DATABASE_CHARSET');
-        $app_charset = env('SYBASE_APPLICATION_CHARSET');
-
-        if ($db_charset && $app_charset) {
-            $newQuery = mb_convert_encoding($newQuery, $db_charset, $app_charset);
+        $app_encoding = config('database.sybase.app_encoding');
+        if (! $app_encoding) {
+            return $newQuery;
         }
+        $db_charset = config('database.sybase.db_charset');
+        $app_charset = config('database.sybase.app_charset');
+        if (is_null($db_charset) || is_null($app_charset)) {
+            throw new \Exception('[SYBASE] Database Charset and App Charset not set');
+        }
+        $newQuery = mb_convert_encoding($newQuery, $db_charset, $app_charset);
 
         return $newQuery;
     }
@@ -389,14 +391,18 @@ class Connection extends IlluminateConnection
 
             $result = [...$result];
 
-            $db_charset = env('SYBASE_DATABASE_CHARSET');
-            $app_charset = env('SYBASE_APPLICATION_CHARSET');
-
-            if ($db_charset && $app_charset) {
-                foreach ($result as &$r) {
-                    foreach ($r as $k => &$v) {
-                        $v = gettype($v) === 'string' ? mb_convert_encoding($v, $app_charset, $db_charset) : $v;
-                    }
+            $app_encoding = config('database.sybase.app_encoding');
+            if (! $app_encoding) {
+                return $result;
+            }
+            $db_charset = config('database.sybase.db_charset');
+            $app_charset = config('database.sybase.app_charset');
+            if (is_null($db_charset) || is_null($app_charset)) {
+                throw new \Exception('[SYBASE] Database Charset and App Charset not set');
+            }
+            foreach ($result as &$r) {
+                foreach ($r as $k => &$v) {
+                    $v = gettype($v) === 'string' ? mb_convert_encoding($v, $app_charset, $db_charset) : $v;
                 }
             }
 
