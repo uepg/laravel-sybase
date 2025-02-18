@@ -342,8 +342,7 @@ class Connection extends IlluminateConnection
         $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
         $app_encoding = config('database.sybase.app_encoding');
-        if (! $app_encoding)
-        {
+        if (! $app_encoding) {
             return $newQuery;
         }
         $db_charset = config('database.sybase.db_charset');
@@ -392,8 +391,7 @@ class Connection extends IlluminateConnection
             $result = [...$result];
 
             $app_encoding = config('database.sybase.app_encoding');
-            if (! $app_encoding)
-            {
+            if (! $app_encoding) {
                 return $result;
             }
             $db_charset = config('database.sybase.db_charset');
