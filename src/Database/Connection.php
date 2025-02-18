@@ -147,8 +147,7 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $cache_tables = env('SYBASE_CACHE_TABLES');
-        $cache = ! key_exists('cache_tables', $builder->connection->config) || $builder->connection->config['cache_tables'];
+        $cache =  $builder->connection->config['cache_tables'] || key_exists('cache_tables', $builder->connection->config);
 
         $types = [];
 
@@ -165,7 +164,7 @@ class Connection extends IlluminateConnection
                 $tables = $alias['table'];
             }
 
-            if ($cache_tables && $cache) {
+            if ($cache) {
                 $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_TABLES_TIME') ?? 3600, function () use ($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
