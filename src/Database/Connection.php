@@ -351,6 +351,7 @@ class Connection extends IlluminateConnection
             throw new \Exception('[SYBASE] Database Charset and App Charset not set');
         }
         $newQuery = mb_convert_encoding($newQuery, $db_charset, $app_charset);
+
         return $newQuery;
     }
 
@@ -404,6 +405,7 @@ class Connection extends IlluminateConnection
                     $v = gettype($v) === 'string' ? mb_convert_encoding($v, $app_charset, $db_charset) : $v;
                 }
             }
+
             return $result;
         });
     }
