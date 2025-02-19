@@ -340,16 +340,16 @@ class Connection extends IlluminateConnection
 
         $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
-        $app_encoding = config('database.sybase.app_encoding');
-        if (is_null($app_encoding)) {
+        $application_encoding = config('database.sybase.application_encoding');
+        if (is_null($application_encoding)) {
             return $newQuery;
         }
-        $db_charset = config('database.sybase.db_charset');
-        $app_charset = config('database.sybase.app_charset');
-        if (is_null($db_charset) || is_null($app_charset)) {
+        $database_charset = config('database.sybase.database_charset');
+        $application_charset = config('database.sybase.application_charset');
+        if (is_null($database_charset) || is_null($application_charset)) {
             throw new \Exception('[SYBASE] Database Charset and App Charset not set');
         }
-        $newQuery = mb_convert_encoding($newQuery, $db_charset, $app_charset);
+        $newQuery = mb_convert_encoding($newQuery, $database_charset, $application_charset);
 
         return $newQuery;
     }
@@ -390,18 +390,18 @@ class Connection extends IlluminateConnection
 
             $result = [...$result];
 
-            $app_encoding = config('database.sybase.app_encoding');
-            if (is_null($app_encoding)) {
+            $application_encoding = config('database.sybase.application_encoding');
+            if (is_null($application_encoding)) {
                 return $result;
             }
-            $db_charset = config('database.sybase.db_charset');
-            $app_charset = config('database.sybase.app_charset');
-            if (is_null($db_charset) || is_null($app_charset)) {
+            $database_charset = config('database.sybase.database_charset');
+            $application_charset = config('database.sybase.application_charset');
+            if (is_null($database_charset) || is_null($application_charset)) {
                 throw new \Exception('[SYBASE] Database Charset and App Charset not set');
             }
             foreach ($result as &$r) {
                 foreach ($r as $k => &$v) {
-                    $v = gettype($v) === 'string' ? mb_convert_encoding($v, $app_charset, $db_charset) : $v;
+                    $v = gettype($v) === 'string' ? mb_convert_encoding($v, $application_charset, $database_charset) : $v;
                 }
             }
 
