@@ -148,7 +148,6 @@ class Connection extends IlluminateConnection
         }
 
         $cache = $builder->connection->config['cache_tables'];
-
         $types = [];
 
         foreach ($arrTables as $tables) {
@@ -165,10 +164,10 @@ class Connection extends IlluminateConnection
             }
 
             if ($cache) {
-                $aux = Cache::remember('sybase_columns/'.$tables.'.columns_info', env('SYBASE_CACHE_TABLES_TIME') ?? 3600, function () use ($tables) {
+                $cacheTime = key_exists('cache_time',$builder->connection->config) ? $builder->connection->config['cache_time'] : 3600;
+                $aux = cache()->remember("sybase_columns.$tables.columns_info", $cacheTime, function () use ($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
-
                     return $queryRes->fetchAll(PDO::FETCH_NAMED);
                 });
             } else {
@@ -342,7 +341,7 @@ class Connection extends IlluminateConnection
         $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
         $app_encoding = config('database.sybase.app_encoding');
-        if (! $app_encoding) {
+        if (is_null($app_encoding)) {
             return $newQuery;
         }
         $db_charset = config('database.sybase.db_charset');
@@ -392,7 +391,7 @@ class Connection extends IlluminateConnection
             $result = [...$result];
 
             $app_encoding = config('database.sybase.app_encoding');
-            if (! $app_encoding) {
+            if (is_null($app_encoding)) {
                 return $result;
             }
             $db_charset = config('database.sybase.db_charset');
