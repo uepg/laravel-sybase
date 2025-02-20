@@ -280,7 +280,7 @@ class Connection extends IlluminateConnection
             FROM
                 syscolumns noholdlock
             JOIN
-                systypes ON systypes.usertype = syscolumns.usertype noholdlock
+                systypes noholdlock ON systypes.usertype = syscolumns.usertype
             WHERE object_name(syscolumns.id) = '{$tables}'
             SQL;
         }
