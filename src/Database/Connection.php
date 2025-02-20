@@ -7,7 +7,6 @@ use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Exception;
 use Illuminate\Database\Connection as IlluminateConnection;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use PDO;
 use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
@@ -164,10 +163,11 @@ class Connection extends IlluminateConnection
             }
 
             if ($cache) {
-                $cacheTime = key_exists('cache_time',$builder->connection->config) ? $builder->connection->config['cache_time'] : 3600;
+                $cacheTime = key_exists('cache_time', $builder->connection->config) ? $builder->connection->config['cache_time'] : 3600;
                 $aux = cache()->remember("sybase_columns.$tables.columns_info", $cacheTime, function () use ($tables) {
                     $queryString = $this->queryString($tables);
                     $queryRes = $this->getPdo()->query($queryString);
+
                     return $queryRes->fetchAll(PDO::FETCH_NAMED);
                 });
             } else {
