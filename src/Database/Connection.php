@@ -270,9 +270,7 @@ class Connection extends IlluminateConnection
             JOIN
                 {$explicitDB[0]}..systypes as systypes noholdlock ON systypes.usertype = syscolumns.usertype
             WHERE
-                systypes.name NOT IN ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-                AND systypes.usertype < 100
-                AND object_name(syscolumns.id, db_id('{$explicitDB[0]}')) = '{$explicitDB[1]}'
+                object_name(syscolumns.id, db_id('{$explicitDB[0]}')) = '{$explicitDB[1]}'
             SQL;
         } else {
             return <<<SQL
@@ -280,13 +278,10 @@ class Connection extends IlluminateConnection
                 syscolumns.name,
                 systypes.name AS type
             FROM
-                syscolumns
+                syscolumns noholdlock
             JOIN
-                systypes ON systypes.usertype = syscolumns.usertype
-            WHERE
-                systypes.name NOT IN ('timestamp', 'sysname', 'longsysname', 'nchar', 'nvarchar')
-                AND systypes.usertype < 100
-            AND object_name(syscolumns.id) = '{$tables}'
+                systypes ON systypes.usertype = syscolumns.usertype noholdlock
+            WHERE object_name(syscolumns.id) = '{$tables}'
             SQL;
         }
     }
@@ -341,7 +336,7 @@ class Connection extends IlluminateConnection
         $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
         $application_encoding = config('database.sybase.application_encoding');
-        if (is_null($application_encoding)) {
+        if (is_null($application_encoding) || $application_encoding == false) {
             return $newQuery;
         }
         $database_charset = config('database.sybase.database_charset');
@@ -391,7 +386,7 @@ class Connection extends IlluminateConnection
             $result = [...$result];
 
             $application_encoding = config('database.sybase.application_encoding');
-            if (is_null($application_encoding)) {
+            if (is_null($application_encoding) || $application_encoding == false) {
                 return $result;
             }
             $database_charset = config('database.sybase.database_charset');
