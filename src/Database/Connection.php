@@ -42,7 +42,7 @@ class Connection extends IlluminateConnection
     /**
      * Execute a Closure within a transaction.
      *
-     * @param  \Closure  $callback
+     * @param \Closure $callback
      * @return mixed
      *
      * @throws \Exception
@@ -64,9 +64,9 @@ class Connection extends IlluminateConnection
             $this->pdo->exec('COMMIT TRAN');
         }
 
-        // If we catch an exception, we will roll back so nothing gets messed
-        // up in the database. Then we'll re-throw the exception so it can
-        // be handled how the developer sees fit for their applications.
+            // If we catch an exception, we will roll back so nothing gets messed
+            // up in the database. Then we'll re-throw the exception so it can
+            // be handled how the developer sees fit for their applications.
         catch (Exception $e) {
             $this->pdo->exec('ROLLBACK TRAN');
 
@@ -83,7 +83,7 @@ class Connection extends IlluminateConnection
      */
     protected function getDefaultQueryGrammar()
     {
-        return $this->withTablePrefix(new QueryGrammar);
+        return new QueryGrammar($this);
     }
 
     /**
@@ -93,7 +93,7 @@ class Connection extends IlluminateConnection
      */
     protected function getDefaultSchemaGrammar()
     {
-        return $this->withTablePrefix(new SchemaGrammar);
+        return new SchemaGrammar($this);
     }
 
     /**
@@ -119,7 +119,7 @@ class Connection extends IlluminateConnection
     /**
      * Compile the bindings for select/insert/update/delete.
      *
-     * @param  \Illuminate\Database\Query\Builder  $builder
+     * @param \Illuminate\Database\Query\Builder $builder
      * @return array
      */
     private function compile(Builder $builder)
@@ -127,7 +127,7 @@ class Connection extends IlluminateConnection
         $arrTables = [];
 
         array_push($arrTables, $builder->from);
-        if (! empty($builder->joins)) {
+        if (!empty($builder->joins)) {
             foreach ($builder->joins as $join) {
                 array_push($arrTables, $join->table);
             }
@@ -178,12 +178,10 @@ class Connection extends IlluminateConnection
 
             foreach ($aux as &$row) {
                 $types[strtolower($row['name'])] = $row['type'];
-                $types[strtolower($tables.'.'.$row['name'])] = $row['type'];
+                $types[strtolower($tables . '.' . $row['name'])] = $row['type'];
 
-                if (! empty($alias['alias'])) {
-                    $types[
-                    strtolower($alias['alias'].'.'.$row['name'])
-                    ] = $row['type'];
+                if (!empty($alias['alias'])) {
+                    $types[strtolower($alias['alias'] . '.' . $row['name'])] = $row['type'];
                 }
             }
         }
@@ -200,7 +198,7 @@ class Connection extends IlluminateConnection
             if (in_array($variable_type, $this->numeric)) {
                 return $v / 1;
             } else {
-                return (string) $v;
+                return (string)$v;
             }
         };
 
@@ -251,7 +249,7 @@ class Connection extends IlluminateConnection
     /**
      * Query string.
      *
-     * @param  string  $tables
+     * @param string $tables
      * @return string
      */
     private function queryString($tables)
@@ -289,8 +287,8 @@ class Connection extends IlluminateConnection
     /**
      * Set new bindings with specified column types to Sybase.
      *
-     * @param  string  $query
-     * @param  array  $bindings
+     * @param string $query
+     * @param array $bindings
      * @return mixed $newBinds
      */
     private function compileBindings($query, $bindings)
@@ -318,8 +316,8 @@ class Connection extends IlluminateConnection
      *
      * @link http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
      *
-     * @param  string  $query
-     * @param  array  $bindings
+     * @param string $query
+     * @param array $bindings
      * @return string $query
      */
     private function compileNewQuery($query, $bindings)
@@ -329,13 +327,14 @@ class Connection extends IlluminateConnection
         $bindings = $this->compileBindings($query, $bindings);
         $partQuery = explode('?', $query);
 
-        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
-        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
-        $bindings = array_map(fn ($v) => gettype($v) === 'NULL' ? 'NULL' : $v, $bindings);
+        $bindings = array_map(fn($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
+        $bindings = array_map(fn($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
+        $bindings = array_map(fn($v) => gettype($v) === 'NULL' ? 'NULL' : $v, $bindings);
 
-        $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
+        $newQuery = join(array_map(fn($k1, $k2) => $k1 . $k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
         $application_encoding = config('database.sybase.application_encoding');
+
         if (is_null($application_encoding) || $application_encoding == false) {
             return $newQuery;
         }
@@ -352,9 +351,9 @@ class Connection extends IlluminateConnection
     /**
      * Run a select statement against the database.
      *
-     * @param  string  $query
-     * @param  array  $bindings
-     * @param  bool  $useReadPdo
+     * @param string $query
+     * @param array $bindings
+     * @param bool $useReadPdo
      * @return array
      */
     public function select($query, $bindings = [], $useReadPdo = true)
@@ -407,8 +406,8 @@ class Connection extends IlluminateConnection
     /**
      * Get the statement.
      *
-     * @param  string  $query
-     * @param  mixed|array  $bindings
+     * @param string $query
+     * @param mixed|array $bindings
      * @return bool
      */
     public function statement($query, $bindings = [])
@@ -428,8 +427,8 @@ class Connection extends IlluminateConnection
     /**
      * Affecting statement.
      *
-     * @param  string  $query
-     * @param  array  $bindings
+     * @param string $query
+     * @param array $bindings
      * @return int
      */
     public function affectingStatement($query, $bindings = [])
