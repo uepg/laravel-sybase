@@ -376,12 +376,9 @@ class Connection extends IlluminateConnection
 
             $result = [];
 
-            try {
-                do {
-                    $result += $statement->fetchAll($this->getFetchMode());
-                } while ($statement->nextRowset());
-            } catch (\Exception $e) {
-            }
+            do {
+                $result += $statement->fetchAll($this->getFetchMode());
+            } while ($statement->nextRowset());
 
             $result = [...$result];
 
