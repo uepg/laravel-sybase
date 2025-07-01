@@ -244,7 +244,6 @@ class Connection extends IlluminateConnection
                 }
             }
         }
-
         return $keys;
     }
 
