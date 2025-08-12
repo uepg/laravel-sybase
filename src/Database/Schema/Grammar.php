@@ -264,6 +264,18 @@ class Grammar extends IlluminateGrammar
             ) DROP TABLE ".$blueprint->getTable();
     }
 
+    public function compileTables()
+    {
+        return "select
+    o.name                           as name,
+    user_name(o.uid)                 as [schema],
+    cast(reserved_pages(db_id(), o.id) as bigint) * @@maxpagesize as size_bytes
+from sysobjects o
+where o.type = 'U'
+order by o.name
+        ";
+    }
+
     /**
      * Compile a drop column command.
      *

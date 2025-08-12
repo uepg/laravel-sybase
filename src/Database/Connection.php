@@ -39,6 +39,54 @@ class Connection extends IlluminateConnection
         'money',
     ];
 
+
+    /**
+     * @var string The application charset
+     */
+    private $applicationCharset;
+
+    /**
+     * @var string The database charset
+     */
+    private $databaseCharset;
+
+    private $applicationEncoding = false;
+
+    /**
+     * Create a new database connection instance.
+     *
+     * @param  \PDO|\Closure  $pdo
+     * @param  string  $database
+     * @param  string  $tablePrefix
+     * @param  array  $config
+     * @return void
+     */
+    public function __construct($pdo, $database = '', $tablePrefix = '', array $config = [])
+    {
+        parent::__construct($pdo, $database, $tablePrefix, $config);
+        $this->configureExtraSettings($config);
+    }
+
+    /**
+     * Configures the encoding for the connection.
+     *
+     * @param array $config
+     * @return void
+     */
+    public function configureExtraSettings($config = [])
+    {
+        $this->applicationEncoding = key_exists('application_encoding',$config) ? $config['application_encoding'] : false;
+        if ($this->applicationEncoding)
+        {
+            if (!key_exists('application_charset',$config,) || !key_exists('database_charset',$config))
+            {
+                throw new \Exception('When application encoding is configured, you need to set up application_charset and database_charset');
+            }
+            $this->applicationCharset = $config['application_charset'];
+            $this->databaseCharset = $config['database_charset'];
+        }
+    }
+
     /**
      * Execute a Closure within a transaction.
      *
@@ -146,7 +194,7 @@ class Connection extends IlluminateConnection
             }
         }
 
-        $cache = $builder->connection->config['cache_tables'];
+        $cache = key_exists('cache_tables',$builder->connection->config) ? $builder->connection->config['cache_tables'] : false;
         $types = [];
 
         foreach ($arrTables as $tables) {
@@ -334,12 +382,12 @@ class Connection extends IlluminateConnection
 
         $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
-        $application_encoding = config('database.sybase.application_encoding');
+        $application_encoding = $this->applicationEncoding;
         if (is_null($application_encoding) || $application_encoding == false) {
             return $newQuery;
         }
-        $database_charset = config('database.sybase.database_charset');
-        $application_charset = config('database.sybase.application_charset');
+        $database_charset = $this->databaseCharset;
+        $application_charset = $this->applicationCharset;
         if (is_null($database_charset) || is_null($application_charset)) {
             throw new \Exception('[SYBASE] Database Charset and App Charset not set');
         }
@@ -381,12 +429,12 @@ class Connection extends IlluminateConnection
 
             $result = [...$result];
 
-            $application_encoding = config('database.sybase.application_encoding');
+            $application_encoding = $this->applicationEncoding;
             if (is_null($application_encoding) || $application_encoding == false) {
                 return $result;
             }
-            $database_charset = config('database.sybase.database_charset');
-            $application_charset = config('database.sybase.application_charset');
+            $database_charset = $this->databaseCharset;
+            $application_charset = $this->applicationCharset;
             if (is_null($database_charset) || is_null($application_charset)) {
                 throw new \Exception('[SYBASE] Database Charset and App Charset not set');
             }
