@@ -47,12 +47,6 @@ Update your **config/database.php's** default driver with the settings for the *
 return [
     ...
 
-    'sybase' =>
-        [
-            'application_encoding' => false,
-            'application_charset' => '',
-            'database_charset' => ''
-        ],
     
     'connections' => [
         ...
@@ -67,7 +61,9 @@ return [
             'charset' => 'utf8',
             'prefix' => '',
             'cache_tables' => true,
-            'cache_time' => 3600
+            'cache_time' => 3600,
+             'application_encoding' => false,
+             'application_charset' => '',
         ],
 
         ...
@@ -107,18 +103,13 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
 ## Configuring the charset conversion
 This package offers to method to charset conversion, it can be converted in application layer or in database layer, we offered both methods because it can be useful for debugging, to config the application layer conversion you need to set up the following entries on the `database.php` file. You can view an example of the application encoding setup below:
 
-```database
-'sybase' =>
-    [
-        'application_encoding' => true,
-        'application_charset' => '',
-        'database_charset' => ''
-    ],
 ```
 To use the database layer conversion add the property charset to connection configuration on the sybase configuration array
 
 ```charset
      'charset' => 'utf8',
+     'application_encoding' => false,
+     'application_charset' => '',
 ```
 
 
