@@ -13,9 +13,7 @@ class Grammar extends IlluminateGrammar
      * @var array
      */
     protected $modifiers = [
-        'Increment',
-        'Nullable',
-        'Default',
+        'Increment', 'Nullable', 'Default',
     ];
 
     /**
@@ -24,19 +22,27 @@ class Grammar extends IlluminateGrammar
      * @var array
      */
     protected array $serials = [
-        'bigInteger',
-        'integer',
-        'numeric',
+        'bigInteger', 'integer', 'numeric',
     ];
 
     /**
      * Compile the query to determine if a table exists.
-     *
+     * @param string|null $schema
+     * @param string $table
      * @return string
      */
-    public function compileTableExists()
+    public function compileTableExists($schema, $table)
     {
-        return "SELECT * FROM sysobjects WHERE type = 'U' AND name = ?";
+        return sprintf('
+            SELECT
+                COUNT(*) AS [exists]
+            FROM
+                sysobjects
+            WHERE
+                type = \'U\'
+            AND
+                name = \'%s\';
+        ', $schema ? $schema.'.'.$table : $table);
     }
 
     /**
@@ -277,8 +283,7 @@ class Grammar extends IlluminateGrammar
 
         $table = $this->wrapTable($blueprint);
 
-        return 'ALTER TABLE '.$table.
-            ' DROP COLUMN '.implode(', ', $columns);
+        return 'ALTER TABLE '.$table.' DROP COLUMN '.implode(', ', $columns);
     }
 
     /**
@@ -660,7 +665,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function modifyDefault(Blueprint $blueprint, Fluent $column)
     {
-        if (! is_null($column->default)) {
+        if (!is_null($column->default)) {
             return ' default '.$this->getDefaultValue($column->default);
         }
     }
@@ -674,10 +679,7 @@ class Grammar extends IlluminateGrammar
      */
     protected function modifyIncrement(Blueprint $blueprint, Fluent $column)
     {
-        if (
-            in_array($column->type, $this->serials) &&
-            $column->autoIncrement
-        ) {
+        if (in_array($column->type, $this->serials) && $column->autoIncrement) {
             return ' identity primary key';
         }
     }
