@@ -475,4 +475,43 @@ class Connection extends IlluminateConnection
 
         return $builder;
     }
+
+    /**
+     * Run a SQL statement.
+     *
+     * @param  string  $query
+     * @param  array  $bindings
+     * @param  \Closure  $callback
+     * @return mixed
+     *
+     * @throws \Illuminate\Database\QueryException
+     */
+    protected function runQueryCallback($query, $bindings, Closure $callback)
+    {
+        try {
+            $result = $callback($query, $bindings);
+
+            if ($result instanceof \PDOStatement) {
+                if (isset($errorInfo[0]) && $errorInfo[0] !== '00000') {
+                    $errorInfo = $result->errorInfo();
+                    $finalErrorMessage = sprintf(
+                        'SQLSTATE[%s] [%d] %s',
+                        $errorInfo[0],
+                        (int)$errorInfo[1],
+                        trim(preg_replace(['/^\[\d+\]\s\(severity\s\d+\)\s/', '/\s+/'], ['', ' '], $errorInfo[2]))
+                    );
+                    throw new \PDOException($finalErrorMessage, (int)$errorInfo[1]);
+                }
+            }
+            return $result;
+
+        } catch (Throwable $e) {
+            throw new QueryException(
+                $this->getName(),
+                $query,
+                $this->prepareBindings($bindings),
+                $e
+            );
+        }
+    }
 }
