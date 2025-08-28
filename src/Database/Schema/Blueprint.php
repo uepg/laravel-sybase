@@ -3,18 +3,19 @@
 namespace Uepg\LaravelSybase\Database\Schema;
 
 use Illuminate\Database\Schema\Blueprint as IlluminateBlueprint;
+use Illuminate\Database\Schema\ColumnDefinition;
 
 class Blueprint extends IlluminateBlueprint
 {
     /**
      * Function for numeric type.
      *
-     * @param  string  $type
-     * @param  string  $name
-     * @param  array  $parameters
-     * @return \Illuminate\Database\Schema\ColumnDefinition
+     * @param  $column
+     * @param  int  $total
+     * @param  bool  $autoIncrement
+     * @return ColumnDefinition
      */
-    public function numeric($column, $total = 8, $autoIncrement = false)
+    public function numeric($column, int $total = 8, bool $autoIncrement = false)
     {
         return $this->addColumn(
             'numeric',

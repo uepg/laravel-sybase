@@ -7,6 +7,7 @@ use Doctrine\DBAL\Driver\PDOSqlsrv\Driver as DoctrineDriver;
 use Exception;
 use Illuminate\Database\Connection as IlluminateConnection;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Facades\Schema;
 use PDO;
 use Uepg\LaravelSybase\Database\Query\Grammar as QueryGrammar;
 use Uepg\LaravelSybase\Database\Query\Processor;
@@ -20,7 +21,7 @@ class Connection extends IlluminateConnection
      *
      * @var array
      */
-    private $withoutQuotes = [
+    private $numeric = [
         'int',
         'numeric',
         'bigint',
@@ -38,6 +39,54 @@ class Connection extends IlluminateConnection
         'money',
     ];
 
+
+    /**
+     * @var string The application charset
+     */
+    private $applicationCharset;
+
+    /**
+     * @var string The database charset
+     */
+    private $databaseCharset;
+
+    private $applicationEncoding = false;
+
+    /**
+     * Create a new database connection instance.
+     *
+     * @param  \PDO|\Closure  $pdo
+     * @param  string  $database
+     * @param  string  $tablePrefix
+     * @param  array  $config
+     * @return void
+     */
+    public function __construct($pdo, $database = '', $tablePrefix = '', array $config = [])
+    {
+        parent::__construct($pdo, $database, $tablePrefix, $config);
+        $this->configureExtraSettings($config);
+    }
+
+    /**
+     * Configures the encoding for the connection.
+     *
+     * @param array $config
+     * @return void
+     */
+    public function configureExtraSettings($config = [])
+    {
+        $this->applicationEncoding = key_exists('application_encoding',$config) ? $config['application_encoding'] : false;
+        if ($this->applicationEncoding)
+        {
+            if (!key_exists('application_charset',$config,) || !key_exists('database_charset',$config))
+            {
+                throw new \Exception('When application encoding is configured, you need to set up application_charset and database_charset');
+            }
+            $this->applicationCharset = $config['application_charset'];
+            $this->databaseCharset = $config['charset'];
+        }
+    }
+
     /**
      * Execute a Closure within a transaction.
      *
@@ -48,7 +97,7 @@ class Connection extends IlluminateConnection
      */
     public function transaction(Closure $callback, $attempts = 1)
     {
-        if ($this->getDriverName() === 'sqlsrv') {
+        if ($this->getDriverName() === 'sybasease') {
             return parent::transaction($callback);
         }
 
@@ -66,7 +115,7 @@ class Connection extends IlluminateConnection
         // If we catch an exception, we will roll back so nothing gets messed
         // up in the database. Then we'll re-throw the exception so it can
         // be handled how the developer sees fit for their applications.
-        catch (Exception $e) {
+        catch (\Exception|\PDOException $e) {
             $this->pdo->exec('ROLLBACK TRAN');
 
             throw $e;
@@ -116,30 +165,42 @@ class Connection extends IlluminateConnection
     }
 
     /**
-     * Compile the bindings for select.
+     * Compile the bindings for select/insert/update/delete.
      *
      * @param  \Illuminate\Database\Query\Builder  $builder
-     * @param  array  $bindings
      * @return array
      */
-    private function compileForSelect(Builder $builder, $bindings)
+    private function compile(Builder $builder)
     {
         $arrTables = [];
 
         array_push($arrTables, $builder->from);
-
         if (! empty($builder->joins)) {
             foreach ($builder->joins as $join) {
                 array_push($arrTables, $join->table);
             }
         }
 
-        $newFormat = [];
+        $wheres = [];
+
+        foreach ($builder->wheres as $w) {
+            switch ($w['type']) {
+                case 'Nested':
+                    $wheres += $w['query']->wheres;
+                    break;
+                default:
+                    array_push($wheres, $w);
+                    break;
+            }
+        }
+
+        $cache = key_exists('cache_tables',$builder->connection->config) ? $builder->connection->config['cache_tables'] : false;
+        $types = [];
 
         foreach ($arrTables as $tables) {
             preg_match(
                 "/(?:(?'table'.*)(?: as )(?'alias'.*))|(?'tables'.*)/",
-                $tables,
+                strtolower($tables),
                 $alias
             );
 
@@ -149,172 +210,126 @@ class Connection extends IlluminateConnection
                 $tables = $alias['table'];
             }
 
-            // TODO: cache this query
-            $queryString = $this->queryStringForSelect($tables);
-            $queryRes = $this->getPdo()->query($queryString);
-            $types[$tables] = $queryRes->fetchAll(PDO::FETCH_NAMED);
+            if ($cache) {
+                $cacheTime = key_exists('cache_time', $builder->connection->config) ? $builder->connection->config['cache_time'] : 3600;
+                $aux = cache()->remember("sybase_columns.$tables.columns_info", $cacheTime, function () use ($tables) {
+                    $queryString = $this->queryString($tables);
+                    $queryRes = $this->getPdo()->query($queryString);
 
-            foreach ($types[$tables] as &$row) {
+                    return $queryRes->fetchAll(PDO::FETCH_NAMED);
+                });
+            } else {
+                $queryString = $this->queryString($tables);
+                $queryRes = $this->getPdo()->query($queryString);
+                $aux = $queryRes->fetchAll(PDO::FETCH_NAMED);
+            }
+
+            foreach ($aux as &$row) {
                 $types[strtolower($row['name'])] = $row['type'];
                 $types[strtolower($tables.'.'.$row['name'])] = $row['type'];
 
                 if (! empty($alias['alias'])) {
                     $types[
-                        strtolower($alias['alias'].'.'.$row['name'])
+                    strtolower($alias['alias'].'.'.$row['name'])
                     ] = $row['type'];
                 }
             }
+        }
 
-            $wheres = [];
+        $keys = [];
 
-            foreach ($builder->wheres as $w) {
-                switch ($w['type']) {
-                    case 'Nested':
-                        $wheres += $w['query']->wheres;
-                        break;
-                    default:
-                        array_push($wheres, $w);
-                        break;
-                }
+        $convert = function ($column, $v) use ($types) {
+            if (is_null($v)) {
+                return null;
             }
 
-            $i = 0;
-            $wheresCount = count($wheres);
+            $variable_type = $types[strtolower($column)];
 
-            for ($ind = 0; $ind < $wheresCount; $ind++) {
-                if ($wheres[$ind]['type'] == 'raw') {
-                    $newBinds[] = $bindings[$i];
-                    $i++;
-                } elseif (
-                    isset($wheres[$ind]['value']) &&
-                    isset($types[strtolower($wheres[$ind]['column'])])
-                ) {
-                    if (is_object($wheres[$ind]['value']) === false) {
-                        if (
-                            in_array(
-                                strtolower($types[
-                                    strtolower($wheres[$ind]['column'])
-                                ]),
-                                $this->withoutQuotes
-                            )
-                        ) {
-                            if (! is_null($bindings[$i])) {
-                                $newBinds[$i] = $bindings[$i] / 1;
-                            } else {
-                                $newBinds[$i] = null;
-                            }
-                        } else {
-                            $newBinds[$i] = (string) $bindings[$i];
-                        }
-                        $i++;
+            if (in_array($variable_type, $this->numeric)) {
+                return $v / 1;
+            } else {
+                return (string) $v;
+            }
+        };
+
+        if (isset($builder->values)) {
+            foreach ($builder->values as $key => $value) {
+                if (gettype($value) === 'array') {
+                    foreach ($value as $k => $v) {
+                        $keys[] = $convert($k, $v);
+                    }
+                } else {
+                    $keys[] = $convert($key, $value);
+                }
+            }
+        }
+
+        if (isset($builder->set)) {
+            foreach ($builder->set as $k => $v) {
+                $keys[] = $convert($k, $v);
+            }
+        }
+
+        foreach ($wheres as $w) {
+            if ($w['type'] == 'Basic') {
+                if (gettype($w['value']) !== 'object') {
+                    $keys[] = $convert($w['column'], $w['value']);
+                }
+            } elseif ($w['type'] == 'In' || $w['type'] == 'NotIn') {
+                foreach ($w['values'] as $v) {
+                    if (gettype($v) !== 'object') {
+                        $keys[] = $convert($w['column'], $v);
+                    }
+                }
+            } elseif ($w['type'] == 'between') {
+                if (count($w['values']) != 2) {
+                    return [];
+                }
+                foreach ($w['values'] as $v) {
+                    if (gettype($v) !== 'object') {
+                        $keys[] = $convert($k, $v);
                     }
                 }
             }
-
-            $newFormat[$tables] = [];
         }
-
-        /**
-         * Is this block duplicated? Need more tests will keep it
-         * commented to remember that a possible error could be related to
-         * this.
-         */
-        /**
-         * $wheres = (array) $builder->wheres;
-         * $i = 0;
-         * $wheresCount = count($wheres);
-         *
-         * for ($ind = 0; $ind < $wheresCount; $ind++) {
-         * if ($wheres[$ind]['type'] == 'raw') {
-         * $newBinds[] = $bindings[$i];
-         * $i++;
-         * } else if (isset($wheres[$ind]['value'])) {
-         * if (is_object($wheres[$ind]['value']) === false) {
-         * if (
-         * in_array(
-         * strtolower($tipos[
-         * strtolower($wheres[$ind]['column'])
-         * ]),
-         * $this->withoutQuotes
-         * )
-         * ) {
-         * if (!is_null($bindings[$i])) {
-         * $newBinds[$i] = $bindings[$i] / 1;
-         * } else {
-         * $newBinds[$i] = null;
-         * }
-         * } else {
-         * $newBinds[$i] = (string) $bindings[$i];
-         * }
-         * $i++;
-         * }
-         * }
-         * }
-         */
-
-        return $newBinds;
+        return $keys;
     }
 
     /**
-     * Query string for select.
+     * Query string.
      *
      * @param  string  $tables
      * @return string
      */
-    private function queryStringForSelect($tables)
+    private function queryString($tables)
     {
-        $explicitDB = explode('..', $tables);
+        $tables = str_replace('..', '.dbo.', $tables);
+        $explicitDB = explode('.dbo.', $tables);
 
+//        Has domain.table
         if (isset($explicitDB[1])) {
-            return "
-                SELECT
-                    a.name,
-                    b.name AS customtype,
-                    st.name AS type
-                FROM
-                    {$explicitDB[0]}..syscolumns a,
-                    {$explicitDB[0]}..systypes b,
-                    {$explicitDB[0]}..systypes s,
-                    {$explicitDB[0]}..systypes st
-                WHERE
-                    a.usertype = b.usertype AND
-                    s.usertype = a.usertype AND
-                    s.type = st.type AND
-                    st.name NOT IN (
-                        'timestamp',
-                        'sysname',
-                        'longsysname',
-                        'nchar',
-                        'nvarchar'
-                    ) AND
-                    st.usertype < 100 AND
-                    object_name (
-                        a.id,
-                        db_id ('{$explicitDB[0]}')
-                    ) = '{$explicitDB[1]}'";
+            return <<<SQL
+            SELECT
+                syscolumns.name,
+                systypes.name AS type
+            FROM
+                {$explicitDB[0]}..syscolumns as syscolumns noholdlock
+            JOIN
+                {$explicitDB[0]}..systypes as systypes noholdlock ON systypes.usertype = syscolumns.usertype
+            WHERE
+                object_name(syscolumns.id, db_id('{$explicitDB[0]}')) = '{$explicitDB[1]}'
+            SQL;
         } else {
-            return "
-                SELECT
-                    a.name,
-                    st.name AS type
-                FROM
-                    syscolumns a,
-                    systypes b,
-                    systypes s,
-                    systypes st
-                WHERE
-                    a.usertype = b.usertype AND
-                    s.usertype = a.usertype AND
-                    s.type = st.type AND
-                    st.name NOT IN (
-                        'timestamp',
-                        'sysname',
-                        'longsysname',
-                        'nchar',
-                        'nvarchar'
-                    ) AND
-                    st.usertype < 100 AND
-                    object_name (a.id) = '{$tables}'";
+            return <<<SQL
+                    SELECT
+                syscolumns.name,
+                systypes.name AS type
+            FROM
+                syscolumns noholdlock
+            JOIN
+                systypes noholdlock ON systypes.usertype = syscolumns.usertype
+            WHERE object_name(syscolumns.id) = '{$tables}'
+            SQL;
         }
     }
 
@@ -323,7 +338,7 @@ class Connection extends IlluminateConnection
      *
      * @param  string  $query
      * @param  array  $bindings
-     * @return mixed  $newBinds
+     * @return mixed $newBinds
      */
     private function compileBindings($query, $bindings)
     {
@@ -332,203 +347,12 @@ class Connection extends IlluminateConnection
         }
 
         $bindings = $this->prepareBindings($bindings);
+        $builder = $this->queryGrammar->getBuilder();
 
-        $newFormat = [];
-
-        switch (explode(' ', $query)[0]) {
-            case 'select':
-                $builder = $this->queryGrammar->getBuilder();
-                if ($builder != null && $builder->wheres != null) {
-                    return $this->compileForSelect($builder, $bindings);
-                } else {
-                    return $bindings;
-                }
-            case 'insert':
-                preg_match(
-                    "/(?'tables'.*) \((?'attributes'.*)\) values/i",
-                    $query,
-                    $matches
-                );
-                break;
-            case 'update':
-                preg_match(
-                    "/(?'tables'.*) set (?'attributes'.*)/i",
-                    $query,
-                    $matches
-                );
-                break;
-            case 'delete':
-                preg_match(
-                    "/(?'tables'.*) where (?'attributes'.*)/i",
-                    $query,
-                    $matches
-                );
-                break;
-            default:
-                return $bindings;
-                break;
-        }
-
-        $desQuery = array_intersect_key(
-            $matches,
-            array_flip(array_filter(array_keys($matches), 'is_string'))
-        );
-
-        if (is_array($desQuery['tables'])) {
-            $desQuery['tables'] = implode($desQuery['tables'], ' ');
-        }
-
-        if (is_array($desQuery['attributes'])) {
-            $desQuery['attributes'] = implode($desQuery['attributes'], ' ');
-        }
-
-        unset($matches);
-
-        unset($queryType);
-
-        preg_match_all("/\[([^\]]*)\]/", $desQuery['attributes'], $arrQuery);
-
-        preg_match_all(
-            "/\[([^\]]*)\]/",
-            str_replace('].[].[', '..', $desQuery['tables']),
-            $arrTables
-        );
-
-        $arrQuery = $arrQuery[1];
-
-        $arrTables = $arrTables[1];
-
-        $ind = 0;
-
-        $numTables = count($arrTables);
-
-        if ($numTables == 1) {
-            $table = $arrTables[0];
-        } elseif ($numTables == 0) {
-            return $bindings;
-        }
-
-        foreach ($arrQuery as $key => $campos) {
-            $itsTable = in_array($campos, $arrTables);
-
-            if ($itsTable || ($numTables == 1 && isset($table) && $key == 0)) {
-                if ($numTables > 1) {
-                    $table = $campos;
-                }
-
-                if (! array_key_exists($table, $newFormat)) {
-                    $queryRes = $this->getPdo()->query(
-                        $this->queryStringForCompileBindings($table)
-                    );
-
-                    $types[$table] = $queryRes->fetchAll(PDO::FETCH_ASSOC);
-
-                    for ($k = 0; $k < count($types[$table]); $k++) {
-                        $types[$table][
-                            $types[$table][$k]['name']
-                        ] = $types[$table][$k];
-
-                        unset($types[$table][$k]);
-                    }
-
-                    $newFormat[$table] = [];
-                }
-            }
-
-            if (! $itsTable) {
-                if (count($bindings) > $ind) {
-                    array_push(
-                        $newFormat[$table], [
-                            'campo' => $campos,
-                            'binding' => $ind,
-                        ]
-                    );
-
-                    if (
-                        in_array(
-                            strtolower($types[$table][$campos]['type']),
-                            $this->withoutQuotes
-                        )
-                    ) {
-                        if (! is_null($bindings[$ind])) {
-                            $newBinds[$ind] = $bindings[$ind] / 1;
-                        } else {
-                            $newBinds[$ind] = null;
-                        }
-                    } else {
-                        $newBinds[$ind] = (string) $bindings[$ind];
-                    }
-                } else {
-                    array_push($newFormat[$table], ['campo' => $campos]);
-                }
-
-                $ind++;
-            }
-        }
-
-        return $newBinds;
-    }
-
-    /**
-     * Query string for compile bindings.
-     *
-     * @param  string  $table
-     * @return string
-     */
-    private function queryStringForCompileBindings($table)
-    {
-        $explicitDB = explode('..', $table);
-
-        if (isset($explicitDB[1])) {
-            return "
-                SELECT
-                    a.name,
-                    b.name AS customtype,
-                    st.name AS type
-                FROM
-                    {$explicitDB[0]}..syscolumns a,
-                    {$explicitDB[0]}..systypes b,
-                    {$explicitDB[0]}..systypes s,
-                    {$explicitDB[0]}..systypes st
-                WHERE
-                    a.usertype = b.usertype AND
-                    s.usertype = a.usertype AND
-                    s.type = st.type AND
-                    st.name NOT IN (
-                        'timestamp',
-                        'sysname',
-                        'longsysname',
-                        'nchar',
-                        'nvarchar'
-                    ) AND
-                    st.usertype < 100 AND
-                    object_name (
-                        a.id,
-                        db_id ('{$explicitDB[0]}')
-                    ) = '{$explicitDB[1]}'";
+        if ($builder != null) {
+            return $this->compile($builder);
         } else {
-            return "
-                SELECT
-                    a.name,
-                    st.name AS type
-                FROM
-                    syscolumns a,
-                    systypes b,
-                    systypes s,
-                    systypes st
-                WHERE
-                    a.usertype = b.usertype AND
-                    s.usertype = a.usertype AND
-                    s.type = st.type AND
-                    st.name NOT IN (
-                        'timestamp',
-                        'sysname',
-                        'longsysname',
-                        'nchar',
-                        'nvarchar'
-                    ) AND
-                    st.usertype < 100 AND
-                    object_name(a.id) = '{$table}'";
+            return $bindings;
         }
     }
 
@@ -538,6 +362,7 @@ class Connection extends IlluminateConnection
      * It could compile again from bindings using PDO::PARAM, however, it has
      * no constants that deal with decimals, so the only way would be to put
      * PDO::PARAM_STR, which would put quotes.
+     *
      * @link http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
      *
      * @param  string  $query
@@ -549,191 +374,26 @@ class Connection extends IlluminateConnection
         $newQuery = '';
 
         $bindings = $this->compileBindings($query, $bindings);
-
         $partQuery = explode('?', $query);
 
-        for ($i = 0; $i < count($partQuery); $i++) {
-            $newQuery .= $partQuery[$i];
+        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
+        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
+        $bindings = array_map(fn ($v) => gettype($v) === 'NULL' ? 'NULL' : $v, $bindings);
 
-            if ($i < count($bindings)) {
-                if (is_string($bindings[$i])) {
-                    $bindings[$i] = str_replace("'", "''", $bindings[$i]);
-
-                    $newQuery .= "'".$bindings[$i]."'";
-                } else {
-                    if (! is_null($bindings[$i])) {
-                        $newQuery .= $bindings[$i];
-                    } else {
-                        $newQuery .= 'null';
-                    }
-                }
-            }
-        }
-
+        $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
+        $application_encoding = $this->applicationEncoding;
+        if (is_null($application_encoding) || $application_encoding == false) {
+            return $newQuery;
+        }
+        $database_charset = $this->databaseCharset;
+        $application_charset = $this->applicationCharset;
+        if (is_null($database_charset) || is_null($application_charset)) {
+            throw new \Exception('[SYBASE] Database Charset and App Charset not set');
+        }
+        $newQuery = mb_convert_encoding($newQuery, $database_charset, $application_charset);
 
         return $newQuery;
-    }
-
-    /**
-     * Compile offset.
-     *
-     * @param  int  $offset
-     * @param  string  $query
-     * @param  array  $bindings
-     * @param  \Uepg\LaravelSybase\Database\Connection  $me
-     * @return string
-     */
-    public function compileOffset($offset, $query, $bindings = [], $me)
-    {
-        $limit = $this->queryGrammar->getBuilder()->limit;
-
-        $from = explode(' ', $this->queryGrammar->getBuilder()->from)[0];
-
-        if (! isset($limit)) {
-            $limit = 999999999999999999999999999;
-        }
-
-        $queryString = $this->queryStringForIdentity($from);
-
-        $identity = $this->getPdo()->query($queryString)->fetchAll(
-            $me->getFetchMode()
-        )[0];
-
-        if (count((array) $identity) === 0) {
-            $queryString = $this->queryStringForPrimaries($from);
-
-            $primaries = $this->getPdo()->query($queryString)->fetchAll(
-                $me->getFetchMode()
-            );
-
-            foreach ($primaries as $primary) {
-                $newArr[] = $primary->primary_key.'+0 AS '.
-                    $primary->primary_key;
-
-                $whereArr[] = '#tmpPaginate.'.$primary->primary_key.
-                    ' = #tmpTable.'.$primary->primary_key;
-            }
-
-            $resPrimaries = implode(', ', $newArr);
-
-            $wherePrimaries = implode(' AND ', $whereArr);
-        } else {
-            $resPrimaries = $identity->column.'+0 AS '.$identity->column;
-
-            $wherePrimaries = '#tmpPaginate.'.$identity->column.
-                ' = #tmpTable.'.$identity->column;
-
-            // Offset operation
-            $this->getPdo()->query(str_replace(
-                ' from ',
-                ' into #tmpPaginate from ',
-                $this->compileNewQuery($query, $bindings)
-            ));
-
-            $this->getPdo()->query('
-                SELECT
-                    '.$resPrimaries.',
-                    idTmp=identity(18)
-                INTO
-                    #tmpTable
-                FROM
-                    #tmpPaginate');
-
-            return $this->getPdo()->query('
-                SELECT
-                    #tmpPaginate.*,
-                    #tmpTable.idTmp
-                FROM
-                    #tmpTable
-                INNER JOIN
-                    #tmpPaginate
-                ON
-                    '.$wherePrimaries.'
-                WHERE
-                    #tmpTable.idTmp BETWEEN '.($offset + 1).' AND
-                    '.($offset + $limit).'
-                ORDER BY
-                    #tmpTable.idTmp ASC')->fetchAll($me->getFetchMode());
-        }
-    }
-
-    /**
-     * Query string for identity.
-     *
-     * @param  string  $from
-     * @return string
-     */
-    private function queryStringForIdentity($from)
-    {
-        $explicitDB = explode('..', $from);
-
-        if (isset($explicitDB[1])) {
-            return "
-                SELECT
-                    b.name AS 'column'
-                FROM
-                    ".$explicitDB[0].'..syscolumns AS b
-                INNER JOIN
-                    '.$explicitDB[0]."..sysobjects AS a
-                ON
-                    a.id = b.id
-                WHERE
-                    status & 128 = 128 AND
-                    a.name = '".$explicitDB[1]."'";
-        } else {
-            return "
-                SELECT
-                    name AS 'column'
-                FROM
-                    syscolumns
-                WHERE
-                    status & 128 = 128 AND
-                    object_name (id) = '".$from."'";
-        }
-    }
-
-    /**
-     * Query string for primaries.
-     *
-     * @param  string  $from
-     * @return string
-     */
-    private function queryStringForPrimaries($from)
-    {
-        $explicitDB = explode('..', $from);
-
-        if (isset($explicitDB[1])) {
-            return '
-                SELECT
-                    index_col (
-                        '.$from.',
-                        i.indid,
-                        c.colid
-                    ) AS primary_key
-                FROM
-                    '.$explicitDB[0].'..sysindexes i,
-                    '.$explicitDB[0]."..syscolumns c
-                WHERE
-                    i.id = c.id AND
-                    c.colid <= i.keycnt AND
-                    i.id = object_id ('".$from."')";
-        } else {
-            return '
-                SELECT
-                    index_col (
-                        '.$from.",
-                        i.indid,
-                        c.colid
-                    ) AS primary_key
-                FROM
-                    sysindexes i,
-                    syscolumns c
-                WHERE
-                    i.id = c.id AND
-                    c.colid <= i.keycnt AND
-                    i.id = object_id ('".$from."')";
-        }
     }
 
     /**
@@ -754,28 +414,37 @@ class Connection extends IlluminateConnection
                 return [];
             }
 
-            if ($this->queryGrammar->getBuilder() != null) {
-                $offset = $this->queryGrammar->getBuilder()->offset;
-            } else {
-                $offset = 0;
-            }
+            $statement = $this->getPdo()->prepare($this->compileNewQuery(
+                $query,
+                $bindings
+            ));
 
-            if ($offset > 0) {
-                return $this->compileOffset($offset, $query, $bindings, $this);
-            } else {
-                $result = [];
+            $statement->execute();
 
-                $statement = $this->getPdo()->query($this->compileNewQuery(
-                    $query,
-                    $bindings
-                ));
+            $result = [];
 
-                do {
-                    $result += $statement->fetchAll($this->getFetchMode());
-                } while ($statement->nextRowset());
+            do {
+                $result += $statement->fetchAll($this->getFetchMode());
+            } while ($statement->nextRowset());
 
+            $result = [...$result];
+
+            $application_encoding = $this->applicationEncoding;
+            if (is_null($application_encoding) || $application_encoding == false) {
                 return $result;
             }
+            $database_charset = $this->databaseCharset;
+            $application_charset = $this->applicationCharset;
+            if (is_null($database_charset) || is_null($application_charset)) {
+                throw new \Exception('[SYBASE] Database Charset and App Charset not set');
+            }
+            foreach ($result as &$r) {
+                foreach ($r as $k => &$v) {
+                    $v = gettype($v) === 'string' ? mb_convert_encoding($v, $application_charset, $database_charset) : $v;
+                }
+            }
+
+            return $result;
         });
     }
 
@@ -783,7 +452,7 @@ class Connection extends IlluminateConnection
      * Get the statement.
      *
      * @param  string  $query
-     * @param  mixed|array   $bindings
+     * @param  mixed|array  $bindings
      * @return bool
      */
     public function statement($query, $bindings = [])
@@ -834,7 +503,7 @@ class Connection extends IlluminateConnection
     /**
      * Get SchemaBuilder.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return \Illuminate\Database\Schema\Builder
      */
     public function getSchemaBuilder()
     {
@@ -842,7 +511,7 @@ class Connection extends IlluminateConnection
             $this->useDefaultSchemaGrammar();
         }
 
-        $builder = new Builder($this);
+        $builder = new \Illuminate\Database\Schema\Builder($this);
 
         $builder->blueprintResolver(function ($table, $callback) {
             return new Blueprint($table, $callback);

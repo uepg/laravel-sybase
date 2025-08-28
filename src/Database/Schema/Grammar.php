@@ -3,7 +3,7 @@
 namespace Uepg\LaravelSybase\Database\Schema;
 
 use Illuminate\Database\Schema\Grammars\Grammar as IlluminateGrammar;
-use Uepg\LaravelSybase\Support\Fluent;
+use Illuminate\Support\Fluent;
 
 class Grammar extends IlluminateGrammar
 {
@@ -23,28 +23,11 @@ class Grammar extends IlluminateGrammar
      *
      * @var array
      */
-    protected $serials = [
+    protected array $serials = [
         'bigInteger',
         'integer',
         'numeric',
     ];
-
-    /**
-     * Verify if $str length is lower to 30 characters.
-     *
-     * @param  string  $str
-     * @return string
-     */
-    public function limit30Characters($str)
-    {
-        if (strlen($str) > 30) {
-            $result = substr($str, 0, 30);
-        } else {
-            $result = $str;
-        }
-
-        return $result;
-    }
 
     /**
      * Compile the query to determine if a table exists.
@@ -62,27 +45,28 @@ class Grammar extends IlluminateGrammar
      * @param  string  $table
      * @return string
      */
-    public function compileColumnExists($table)
+    public function compileColumnExists(string $table)
     {
         return "
-            SELECT
-                col.name
-            FROM
-                sys.columns AS col
-            JOIN
-                sys.objects AS obj
-            ON
-                col.object_id = obj.object_id
-            WHERE
-                obj.type = 'U' AND
-                obj.name = '$table'";
+                   SELECT
+            col.name
+        FROM
+            syscolumns col noholdlock
+        JOIN
+            sysobjects obj noholdlock
+        ON
+            col.id = obj.id
+        WHERE
+            obj.type = 'U' AND
+            obj.name = '$table';
+";
     }
 
     /**
      * Compile a create table command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileCreate(Blueprint $blueprint, Fluent $command)
@@ -97,8 +81,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a create table command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileAdd(Blueprint $blueprint, Fluent $command)
@@ -111,10 +95,72 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
+     * @param  $table
+     * @return string
+     *                Functions do compile the columns of a given table
+     */
+    public function compileColumns($table)
+    {
+        return "SELECT
+           col.name,
+           type.name AS type_name,
+           col.length AS length,
+           col.prec AS precision,
+           col.scale AS places,
+           CASE WHEN (col.status & 0x08) = 0x08 THEN 'YES' ELSE 'NO' END AS nullable,
+           def.text AS [default],
+           CASE WHEN (col.status & 0x80) = 0x80 THEN 'YES' ELSE 'NO' END AS autoincrement,
+           NULL AS collation, -- Sybase não fornece suporte direto para collation em colunas
+           com.text AS comment -- Comentários associados à coluna, se existirem
+       FROM
+           sysobjects obj noholdlock
+               JOIN
+           syscolumns col noholdlock ON obj.id = col.id
+               JOIN
+           systypes type noholdlock ON col.usertype = type.usertype
+               LEFT JOIN
+           syscomments def noholdlock ON col.cdefault = def.id -- Valores padrão da coluna
+               LEFT JOIN
+           syscomments com  noholdlock ON col.colid = com.colid -- Comentários associados às colunas (se habilitados)
+       WHERE
+           obj.type IN ('U', 'V') -- 'U' para tabelas, 'V' para visões
+         AND obj.name = '$table'
+         AND user_name(obj.uid) = user_name()
+       ORDER BY
+           col.colid";
+    }
+
+    /**
+     * @param  $table
+     * @return string
+     *                Functions that return the indexes of a given table
+     */
+    public function compileIndexes($table)
+    {
+        return "SELECT
+        DISTINCT i.name,
+                 index_col(o.name, i.indid, c.colid) AS column_name,
+                 CASE WHEN i.status & 2048 = 2048 THEN 'YES' ELSE 'NO' END AS is_primary,
+                 CASE WHEN i.status & 2 = 2 THEN 'YES' ELSE 'NO' END AS is_unique
+    FROM
+        sysobjects o noholdlock
+            INNER JOIN sysindexes i noholdlock ON i.id = o.id
+            INNER JOIN syscolumns c noholdlock ON c.id = o.id
+    WHERE
+        o.type = 'U'  -- Apenas tabelas de usuário
+      AND o.name = '$table'  -- Nome da tabela alvo
+      AND i.indid > 0  -- Índices não-triviais
+      AND i.status & 2 = 2  -- Apenas índices do sistema (ajuste se necessário)
+      AND index_col(o.name, i.indid, c.colid) IS NOT NULL  -- Verifica colunas válidas associadas ao índice
+    ORDER BY
+        i.name, column_name";
+    }
+
+    /**
      * Compile a primary key command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compilePrimary(Blueprint $blueprint, Fluent $command)
@@ -132,10 +178,27 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
+     * Verify if $str length is lower to 30 characters.
+     *
+     * @param  string  $str
+     * @return string
+     */
+    public function limit30Characters(string $str)
+    {
+        if (strlen($str) > 30) {
+            $result = substr($str, 0, 30);
+        } else {
+            $result = $str;
+        }
+
+        return $result;
+    }
+
+    /**
      * Compile a unique key command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileUnique(Blueprint $blueprint, Fluent $command)
@@ -152,8 +215,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a plain index key command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileIndex(Blueprint $blueprint, Fluent $command)
@@ -170,8 +233,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop table command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDrop(Blueprint $blueprint, Fluent $command)
@@ -182,8 +245,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop table (if exists) command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropIfExists(Blueprint $blueprint, Fluent $command)
@@ -193,17 +256,31 @@ class Grammar extends IlluminateGrammar
                 SELECT
                     *
                 FROM
-                    INFORMATION_SCHEMA.TABLES
+                    sysobjects
                 WHERE
-                    TABLE_NAME = '".$blueprint->getTable()."'
+                    type = 'U'
+                AND
+                    name = '".$blueprint->getTable()."'
             ) DROP TABLE ".$blueprint->getTable();
+    }
+
+    public function compileTables()
+    {
+        return "select
+    o.name                           as name,
+    user_name(o.uid)                 as [schema],
+    cast(reserved_pages(db_id(), o.id) as bigint) * @@maxpagesize as size_bytes
+from sysobjects o
+where o.type = 'U'
+order by o.name
+        ";
     }
 
     /**
      * Compile a drop column command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropColumn(Blueprint $blueprint, Fluent $command)
@@ -219,8 +296,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop primary key command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropPrimary(Blueprint $blueprint, Fluent $command)
@@ -233,8 +310,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop unique key command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropUnique(Blueprint $blueprint, Fluent $command)
@@ -247,8 +324,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop index command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropIndex(Blueprint $blueprint, Fluent $command)
@@ -261,8 +338,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a drop foreign key command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileDropForeign(Blueprint $blueprint, Fluent $command)
@@ -275,8 +352,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a rename table command.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $command
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $command
      * @return string
      */
     public function compileRename(Blueprint $blueprint, Fluent $command)
@@ -289,7 +366,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a char type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeChar(Fluent $column)
@@ -300,7 +377,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a string type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeString(Fluent $column)
@@ -311,7 +388,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a text type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeText(Fluent $column)
@@ -322,7 +399,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a medium text type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeMediumText(Fluent $column)
@@ -333,7 +410,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a long text type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeLongText(Fluent $column)
@@ -344,7 +421,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a integer type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeInteger(Fluent $column)
@@ -355,7 +432,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a big integer type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeBigInteger(Fluent $column)
@@ -366,7 +443,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a medium integer type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeMediumInteger(Fluent $column)
@@ -377,7 +454,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a tiny integer type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTinyInteger(Fluent $column)
@@ -388,7 +465,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a small integer type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeSmallInteger(Fluent $column)
@@ -399,7 +476,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a float type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeFloat(Fluent $column)
@@ -410,7 +487,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a double type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDouble(Fluent $column)
@@ -421,7 +498,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a decimal type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDecimal(Fluent $column)
@@ -432,7 +509,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a numeric type.
      *
-     * @param \Uepg\LaravelSybase\Support\Fluent $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeNumeric(Fluent $column)
@@ -443,7 +520,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a boolean type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeBoolean(Fluent $column)
@@ -454,7 +531,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for an enum type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeEnum(Fluent $column)
@@ -465,7 +542,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a json type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeJson(Fluent $column)
@@ -476,7 +553,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a jsonb type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeJsonb(Fluent $column)
@@ -487,7 +564,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a date type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDate(Fluent $column)
@@ -498,7 +575,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a date-time type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDateTime(Fluent $column)
@@ -509,7 +586,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a date-time type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeDateTimeTz(Fluent $column)
@@ -520,7 +597,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a time type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTime(Fluent $column)
@@ -531,7 +608,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a time type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimeTz(Fluent $column)
@@ -542,7 +619,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a timestamp type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimestamp(Fluent $column)
@@ -555,7 +632,7 @@ class Grammar extends IlluminateGrammar
      *
      * @link https://msdn.microsoft.com/en-us/library/bb630289(v=sql.120).aspx
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeTimestampTz(Fluent $column)
@@ -566,7 +643,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Create the column definition for a binary type.
      *
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Fluent  $column
      * @return string
      */
     protected function typeBinary(Fluent $column)
@@ -577,8 +654,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Get the SQL for a nullable column modifier.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $column
      * @return string|null
      */
     protected function modifyNullable(Blueprint $blueprint, Fluent $column)
@@ -589,8 +666,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Get the SQL for a default column modifier.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $column
      * @return string|null
      */
     protected function modifyDefault(Blueprint $blueprint, Fluent $column)
@@ -603,8 +680,8 @@ class Grammar extends IlluminateGrammar
     /**
      * Get the SQL for an auto-increment column modifier.
      *
-     * @param  \Uepg\LaravelSybase\Database\Schema\Blueprint  $blueprint
-     * @param  \Uepg\LaravelSybase\Support\Fluent  $column
+     * @param  Blueprint  $blueprint
+     * @param  Fluent  $column
      * @return string|null
      */
     protected function modifyIncrement(Blueprint $blueprint, Fluent $column)

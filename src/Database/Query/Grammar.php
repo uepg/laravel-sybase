@@ -51,6 +51,108 @@ class Grammar extends IlluminateGrammar
     }
 
     /**
+     * Currently INSERT and UPDATE do not have "JOIN" to receive parameters from other tables, for example:
+     *
+     * A::query()
+     *   ->join('B', 'B.id', '=', 1)
+     *   ->insert([
+     *       'name' => DB::raw('B.name'),
+     *       'another_column' => 'another column',
+     *   ]));
+     *
+     * doesn't gerenerate the correct query:
+     *
+     *  INSERT INTO A (name, another_column)
+     *  SELECT B.name, 'another column'
+     *  FROM B
+     *  WHERE B.id = 1
+     */
+    /**
+     * Compile an insert statement into SQL.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $values
+     * @return string
+     */
+    public function compileInsert(Builder $query, array $values)
+    {
+        $this->builder = $query;
+        $this->builder->values = $values;
+
+        // Essentially we will force every insert to be treated as a batch insert which
+        // simply makes creating the SQL easier for us since we can utilize the same
+        // basic routine regardless of an amount of records given to us to insert.
+        $table = $this->wrapTable($query->from);
+
+        if (empty($values)) {
+            return "insert into {$table} default values";
+        }
+
+        if (! is_array(reset($values))) {
+            $values = [$values];
+        }
+
+        $columns = $this->columnize(array_keys(reset($values)));
+
+        // We need to build a list of parameter place-holders of values that are bound
+        // to the query. Each insert should have the exact same number of parameter
+        // bindings so we will loop through the record and parameterize them all.
+        $parameters = collect($values)->map(function ($record) {
+            return 'SELECT '.$this->parameterize($record);
+        })->implode(' UNION ALL ');
+
+        return "insert into $table ($columns) $parameters";
+    }
+
+    /**
+     * Compile an update statement into SQL.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  array  $values
+     * @return string
+     */
+    public function compileUpdate(Builder $query, array $values)
+    {
+        $this->builder = $query;
+        $this->builder->set = $values;
+
+        $components = $this->compileComponents($query);
+
+        $table = $this->wrapTable($query->from);
+
+        $columns = $this->compileUpdateColumns($query, $values);
+
+        $where = $this->compileWheres($query);
+
+        return trim(
+            isset($query->joins)
+                ? $this->compileUpdateWithJoins($query, $table, $columns, $where)
+                : $this->compileUpdateWithoutJoins($query, $table, $columns, $where)
+        );
+    }
+
+    /**
+     * Compile a delete statement into SQL.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return string
+     */
+    public function compileDelete(Builder $query)
+    {
+        $this->builder = $query;
+
+        $table = $this->wrapTable($query->from);
+
+        $where = $this->compileWheres($query);
+
+        return trim(
+            isset($query->joins)
+                ? $this->compileDeleteWithJoins($query, $table, $where)
+                : $this->compileDeleteWithoutJoins($query, $table, $where)
+        );
+    }
+
+    /**
      * Compile the "select *" portion of the query.
      *
      * @param  \Illuminate\Database\Query\Builder  $query
@@ -120,6 +222,10 @@ class Grammar extends IlluminateGrammar
      */
     protected function compileOffset(Builder $query, $offset)
     {
+        if ($offset > 0) {
+            return 'rows offset '.$offset;
+        }
+
         return '';
     }
 

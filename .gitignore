@@ -1,2 +1,9 @@
 /vendor
 composer.lock
+
+.idea
+
+phpunit.xml
+.env.testing
+/.phpunit.cache/test-results
+/.phpunit.result.cache

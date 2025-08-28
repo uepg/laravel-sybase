@@ -14,15 +14,9 @@
 
 Add the following in the require section of your **composer.json**:
 
-### Laravel 5.1, 5.2, 5.3
-
+### Laravel >=7.x
 ```json
-"uepg/laravel-sybase": "~1.0"
-```
-### Laravel 5.4, 5.5, 5.6, 5.7, 5.8, 6.x, 7.x, 8.x, 9.x
-
-```json
-"uepg/laravel-sybase": "~2.0"
+"uepg/laravel-sybase": "~4.0"
 ```
 
 Update the package dependencies executing:
@@ -53,11 +47,12 @@ Update your **config/database.php's** default driver with the settings for the *
 return [
     ...
 
+    
     'connections' => [
         ...
 
         'sybase' => [
-            'driver' => 'sqlsrv',
+            'driver' => 'sybasease',
             'host' => env('DB_HOST', 'sybase.myserver.com'),
             'port' => env('DB_PORT', '5000'),
             'database' => env('DB_DATABASE', 'mydatabase'),
@@ -65,6 +60,10 @@ return [
             'password' => env('DB_PASSWORD', 'password'),
             'charset' => 'utf8',
             'prefix' => '',
+            'cache_tables' => true,
+            'cache_time' => 3600,
+             'application_encoding' => false,
+             'application_charset' => '',
         ],
 
         ...
@@ -99,6 +98,29 @@ The file is usualy found in **/etc/freetds/freetds.conf**. Set the configuration
 [global]
     # TDS protocol version
     tds version = 5.0
+```
+
+## Configuring the charset conversion
+This package offers to method to charset conversion, it can be converted in application layer or in database layer, we offered both methods because it can be useful for debugging, to config the application layer conversion you need to set up the following entries on the `database.php` file. You can view an example of the application encoding setup below:
+
+```
+To use the database layer conversion add the property charset to connection configuration on the sybase configuration array
+
+```charset
+     'charset' => 'utf8',
+     'application_encoding' => false,
+     'application_charset' => '',
+```
+
+
+
+## Configuring the cache
+As the library consults table information whenever it receives a request, caching can be used to avoid excessive queries
+
+To use the cache, add the property `cache_tables` to the database.php connection configuration, you can customize the time of the cache with the property `cache_time` in the same configuration
+```dotenv
+        'cache_tables' => true,
+        'cache_time' => 3600
 ```
 
 ## Setting to use numeric data type
