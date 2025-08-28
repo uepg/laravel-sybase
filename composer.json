@@ -1,6 +1,6 @@
 {
     "name": "uepg/laravel-sybase",
-    "description": "Sybase based Eloquent module extension for Laravel 10.x",
+    "description": "Sybase based Eloquent module extension for Laravel 5.x.",
     "keywords": [
         "sybase"
     ],
@@ -13,10 +13,6 @@
         {
             "name": "Ademir Mazer Junior",
             "email": "ademir.mazer.jr@gmail.com"
-        },
-        {
-            "name": "Matheus Bueno Bartkevicius",
-            "email": "matheusbartkev@gmail.com"
         }
     ],
     "support": {
@@ -24,15 +20,10 @@
         "wiki": "https://github.com/uepg/laravel-sybase/wiki"
     },
     "require": {
-        "php": ">=8.1",
-        "doctrine/dbal": "^3.5.1",
-        "illuminate/database": ">=8.0",
-        "illuminate/support": ">=8.0",
-        "ext-pdo": "*"
-    },
-    "require-dev": {
-        "orchestra/testbench": "^8.5",
-        "nunomaduro/collision": "^7.4"
+        "php": "^5.6.4 || ^7.0 || ^8.0",
+        "doctrine/dbal": "^2.5 || ^3.5.1",
+        "illuminate/database": "5.4.*|5.5.*|5.6.*|5.7.*|5.8.*|6.*|7.*|8.*|9.*",
+        "illuminate/support": "5.4.*|5.5.*|5.6.*|5.7.*|5.8.*|6.*|7.*|8.*|9.*"
     },
     "extra": {
         "laravel": {
@@ -46,13 +37,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Uepg\\LaravelSybase\\": "src/",
-            "Tests\\": "tests/"
+            "Uepg\\LaravelSybase\\": "src/"
         }
-    },
-    "scripts": {
-        "post-autoload-dump": [
-            "@php vendor/bin/testbench package:discover --ansi"
-        ]
     }
 }
