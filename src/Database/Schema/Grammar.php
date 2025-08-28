@@ -40,8 +40,7 @@ class Grammar extends IlluminateGrammar
             WHERE
                 type = \'U\'
             AND
-                name = \'%s\';
-        ', $schema ? $schema.'.'.$table : $table);
+                name = \'%s\'', $table);
     }
 
     /**
