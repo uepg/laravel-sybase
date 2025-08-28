@@ -308,7 +308,7 @@ class Grammar extends IlluminateGrammar
      *
      * @return string
      */
-    public function compileDropForeign(Blueprint $blueprint, Fluent $command)
+    public function compileDropForeign(\Illuminate\Database\Schema\Blueprint $blueprint, Fluent $command)
     {
         // Laravel expects Illuminate's blueprint as parameter to this method. Instead, we are using our own blueprint
         // might cause error
