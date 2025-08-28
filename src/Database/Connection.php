@@ -492,8 +492,8 @@ class Connection extends IlluminateConnection
             $result = $callback($query, $bindings);
 
             if ($result instanceof \PDOStatement) {
+                $errorInfo = $result->errorInfo();
                 if (isset($errorInfo[0]) && $errorInfo[0] !== '00000') {
-                    $errorInfo = $result->errorInfo();
                     $finalErrorMessage = sprintf(
                         'SQLSTATE[%s] [%d] %s',
                         $errorInfo[0],
