@@ -31,7 +31,7 @@ class SybaseServiceProvider extends ServiceProvider
         });
 
         $this->app->bind('db.connector.sybasease', function ($app) {
-            return new Connector();
+            return new Connector;
         });
     }
 }

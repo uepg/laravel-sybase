@@ -29,8 +29,6 @@ class Processor extends SqlServerProcessor
     }
 
     /**
-     * @param  $results
-     * @param  $indexName
      * @return array
      *               Helper function for building index vector
      */

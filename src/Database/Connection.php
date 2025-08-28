@@ -20,8 +20,6 @@ class Connection extends IlluminateConnection
 {
     /**
      * All types without quotes in Sybase's query.
-     *
-     * @var array
      */
     private array $numeric = [
         'int', 'numeric', 'bigint', 'integer', 'smallint', 'tinyint', 'decimal', 'double', 'float', 'real', 'bit',
@@ -31,7 +29,6 @@ class Connection extends IlluminateConnection
     /**
      * Execute a Closure within a transaction.
      *
-     * @param  Closure  $callback
      * @param  int  $attempts
      * @return mixed
      *
@@ -54,9 +51,9 @@ class Connection extends IlluminateConnection
             $this->pdo->exec('COMMIT TRAN');
         }
 
-            // If we catch an exception, we will roll back so nothing gets messed
-            // up in the database. Then we'll re-throw the exception so it can
-            // be handled how the developer sees fit for their applications.
+        // If we catch an exception, we will roll back so nothing gets messed
+        // up in the database. Then we'll re-throw the exception so it can
+        // be handled how the developer sees fit for their applications.
         catch (Exception $e) {
             $this->pdo->exec('ROLLBACK TRAN');
 
@@ -101,7 +98,7 @@ class Connection extends IlluminateConnection
             $result = [...$result];
 
             $application_encoding = config('database.sybase.application_encoding');
-            if (!$application_encoding) {
+            if (! $application_encoding) {
                 return $result;
             }
             $database_charset = config('database.sybase.database_charset');
@@ -129,9 +126,8 @@ class Connection extends IlluminateConnection
      *
      * @link http://stackoverflow.com/questions/2718628/pdoparam-for-type-decimal
      *
-     * @param  string  $query
-     * @param  array  $bindings
      * @return string $query
+     *
      * @throws Exception
      */
     private function compileNewQuery(string $query, array $bindings)
@@ -139,14 +135,14 @@ class Connection extends IlluminateConnection
         $bindings = $this->compileBindings($query, $bindings);
         $partQuery = explode('?', $query);
 
-        $bindings = array_map(fn($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
-        $bindings = array_map(fn($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
-        $bindings = array_map(fn($v) => gettype($v) === 'NULL' ? 'NULL' : $v, $bindings);
+        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
+        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
+        $bindings = array_map(fn ($v) => gettype($v) === 'NULL' ? 'NULL' : $v, $bindings);
 
-        $newQuery = join(array_map(fn($k1, $k2) => $k1.$k2, $partQuery, $bindings));
+        $newQuery = implode(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
         $application_encoding = config('database.sybase.application_encoding');
-        if (!$application_encoding) {
+        if (! $application_encoding) {
             return $newQuery;
         }
         $database_charset = config('database.sybase.database_charset');
@@ -154,14 +150,13 @@ class Connection extends IlluminateConnection
         if (is_null($database_charset) || is_null($application_charset)) {
             throw new Exception('[SYBASE] Database Charset and App Charset not set');
         }
+
         return mb_convert_encoding($newQuery, $database_charset, $application_charset);
     }
 
     /**
      * Set new bindings with specified column types to Sybase.
      *
-     * @param  string  $query
-     * @param  array  $bindings
      * @return array $newBinds
      */
     private function compileBindings(string $query, array $bindings)
@@ -183,7 +178,6 @@ class Connection extends IlluminateConnection
     /**
      * Compile the bindings for select/insert/update/delete.
      *
-     * @param  Builder  $builder
      * @return array
      */
     private function compile(Builder $builder)
@@ -191,7 +185,7 @@ class Connection extends IlluminateConnection
         $arrTables = [];
 
         $arrTables[] = $builder->from;
-        if (!empty($builder->joins)) {
+        if (! empty($builder->joins)) {
             foreach ($builder->joins as $join) {
                 $arrTables[] = $join->table;
             }
@@ -223,7 +217,7 @@ class Connection extends IlluminateConnection
             }
 
             if ($cache) {
-                $cacheTime = key_exists('cache_time',
+                $cacheTime = array_key_exists('cache_time',
                     $builder->connection->config) ? $builder->connection->config['cache_time'] : 3600;
                 $aux = cache()->remember("sybase_columns.$tables.columns_info", $cacheTime, function () use ($tables) {
                     $queryString = $this->queryString($tables);
@@ -243,7 +237,7 @@ class Connection extends IlluminateConnection
                 $types[strtolower($row['name'])] = $row['type'];
                 $types[strtolower($tables.'.'.$row['name'])] = $row['type'];
 
-                if (!empty($alias['alias'])) {
+                if (! empty($alias['alias'])) {
                     $types[strtolower($alias['alias'].'.'.$row['name'])] = $row['type'];
                 }
             }
@@ -312,7 +306,6 @@ class Connection extends IlluminateConnection
     /**
      * Query string.
      *
-     * @param  string  $tables
      * @return string
      */
     private function queryString(string $tables)
@@ -320,7 +313,7 @@ class Connection extends IlluminateConnection
         $tables = str_replace('..', '.dbo.', $tables);
         $explicitDB = explode('.dbo.', $tables);
 
-//        Has domain.table
+        //        Has domain.table
         if (isset($explicitDB[1])) {
             return <<<SQL
             SELECT
@@ -451,7 +444,6 @@ class Connection extends IlluminateConnection
      *
      * @param  string  $query
      * @param  array  $bindings
-     * @param  Closure  $callback
      * @return mixed
      *
      * @throws QueryException
@@ -469,6 +461,7 @@ class Connection extends IlluminateConnection
                     throw new PDOException($finalErrorMessage, (int) $errorInfo[1]);
                 }
             }
+
             return $result;
 
         } catch (Throwable $e) {

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\DB;
 
 class ExampleTest extends TestCase
 {
-    public function testExample()
+    public function test_example()
     {
         $db = DB::getDefaultConnection();
         $this->assertEquals(config('database.default'), $db);

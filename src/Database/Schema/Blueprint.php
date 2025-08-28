@@ -10,9 +10,6 @@ class Blueprint extends IlluminateBlueprint
     /**
      * Function for numeric type.
      *
-     * @param  $column
-     * @param  int  $total
-     * @param  bool  $autoIncrement
      * @return ColumnDefinition
      */
     public function numeric($column, int $total = 8, bool $autoIncrement = false)

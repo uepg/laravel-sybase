@@ -37,7 +37,6 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a select query into SQL.
      *
-     * @param  Builder  $query
      * @return string
      */
     public function compileSelect(Builder $query)
@@ -69,8 +68,6 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile an insert statement into SQL.
      *
-     * @param  Builder  $query
-     * @param  array  $values
      * @return string
      */
     public function compileInsert(Builder $query, array $values)
@@ -87,7 +84,7 @@ class Grammar extends IlluminateGrammar
             return "insert into {$table} default values";
         }
 
-        if (!is_array(reset($values))) {
+        if (! is_array(reset($values))) {
             $values = [$values];
         }
 
@@ -108,8 +105,6 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile an update statement into SQL.
      *
-     * @param  Builder  $query
-     * @param  array  $values
      * @return string
      */
     public function compileUpdate(Builder $query, array $values)
@@ -132,7 +127,6 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a delete statement into SQL.
      *
-     * @param  Builder  $query
      * @return string
      */
     public function compileDelete(Builder $query)
@@ -150,7 +144,6 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a truncate table statement into SQL.
      *
-     * @param  Builder  $query
      * @return array
      */
     public function compileTruncate(Builder $query)
@@ -173,13 +166,12 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "select *" portion of the query.
      *
-     * @param  Builder  $query
      * @param  array  $columns
      * @return string
      */
     protected function compileColumns(Builder $query, $columns)
     {
-        if (!is_null($query->aggregate)) {
+        if (! is_null($query->aggregate)) {
             return;
         }
 
@@ -199,7 +191,6 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "from" portion of the query.
      *
-     * @param  Builder  $query
      * @param  string  $table
      * @return string
      */
@@ -211,7 +202,7 @@ class Grammar extends IlluminateGrammar
             return $from.' '.$query->lock;
         }
 
-        if (!is_null($query->lock)) {
+        if (! is_null($query->lock)) {
             return $from.' with(rowlock,'.($query->lock ? 'updlock,' : '').'holdlock)';
         }
 
@@ -221,7 +212,6 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "limit" portions of the query.
      *
-     * @param  Builder  $query
      * @param  int  $limit
      * @return string
      */
@@ -233,7 +223,6 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "offset" portions of the query.
      *
-     * @param  Builder  $query
      * @param  int  $offset
      * @return string
      */

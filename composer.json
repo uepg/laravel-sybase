@@ -31,7 +31,8 @@
     "require-dev": {
         "orchestra/testbench": "*",
         "nunomaduro/collision": "*",
-        "laravel/framework": "12.*"
+        "laravel/framework": "12.*",
+        "laravel/pint": "^1.24"
     },
     "extra": {
         "laravel": {
