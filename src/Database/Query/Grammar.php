@@ -13,22 +13,21 @@ class Grammar extends IlluminateGrammar
      * @var array
      */
     protected $operators = [
-        '=', '<', '>', '<=', '>=', '!<', '!>', '<>', '!=',
-        'like', 'not like', 'between', 'ilike',
-        '&', '&=', '|', '|=', '^', '^=',
+        '=', '<', '>', '<=', '>=', '!<', '!>', '<>', '!=', 'like', 'not like', 'between', 'ilike', '&', '&=', '|', '|=',
+        '^', '^=',
     ];
 
     /**
      * Builder for query.
      *
-     * @var \Illuminate\Database\Query\Builder
+     * @var Builder
      */
     protected $builder;
 
     /**
      * Get the builder.
      *
-     * @return \Illuminate\Database\Query\Builder
+     * @return Builder
      */
     public function getBuilder()
     {
@@ -38,7 +37,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile a select query into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  Builder  $query
      * @return string
      */
     public function compileSelect(Builder $query)
@@ -70,7 +69,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile an insert statement into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  Builder  $query
      * @param  array  $values
      * @return string
      */
@@ -88,7 +87,7 @@ class Grammar extends IlluminateGrammar
             return "insert into {$table} default values";
         }
 
-        if (! is_array(reset($values))) {
+        if (!is_array(reset($values))) {
             $values = [$values];
         }
 
@@ -97,9 +96,11 @@ class Grammar extends IlluminateGrammar
         // We need to build a list of parameter place-holders of values that are bound
         // to the query. Each insert should have the exact same number of parameter
         // bindings so we will loop through the record and parameterize them all.
-        $parameters = collect($values)->map(function ($record) {
-            return 'SELECT '.$this->parameterize($record);
-        })->implode(' UNION ALL ');
+        $parameters = collect($values)
+            ->map(function ($record) {
+                return 'SELECT '.$this->parameterize($record);
+            })
+            ->implode(' UNION ALL ');
 
         return "insert into $table ($columns) $parameters";
     }
@@ -107,7 +108,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile an update statement into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  Builder  $query
      * @param  array  $values
      * @return string
      */
@@ -124,17 +125,14 @@ class Grammar extends IlluminateGrammar
 
         $where = $this->compileWheres($query);
 
-        return trim(
-            isset($query->joins)
-                ? $this->compileUpdateWithJoins($query, $table, $columns, $where)
-                : $this->compileUpdateWithoutJoins($query, $table, $columns, $where)
-        );
+        return trim(isset($query->joins) ? $this->compileUpdateWithJoins($query, $table, $columns,
+            $where) : $this->compileUpdateWithoutJoins($query, $table, $columns, $where));
     }
 
     /**
      * Compile a delete statement into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  Builder  $query
      * @return string
      */
     public function compileDelete(Builder $query)
@@ -145,23 +143,43 @@ class Grammar extends IlluminateGrammar
 
         $where = $this->compileWheres($query);
 
-        return trim(
-            isset($query->joins)
-                ? $this->compileDeleteWithJoins($query, $table, $where)
-                : $this->compileDeleteWithoutJoins($query, $table, $where)
-        );
+        return trim(isset($query->joins) ? $this->compileDeleteWithJoins($query, $table,
+            $where) : $this->compileDeleteWithoutJoins($query, $table, $where));
+    }
+
+    /**
+     * Compile a truncate table statement into SQL.
+     *
+     * @param  Builder  $query
+     * @return array
+     */
+    public function compileTruncate(Builder $query)
+    {
+        return [
+            'truncate table '.$this->wrapTable($query->from) => [],
+        ];
+    }
+
+    /**
+     * Get the format for database stored dates.
+     *
+     * @return string
+     */
+    public function getDateFormat()
+    {
+        return 'Y-m-d H:i:s.000';
     }
 
     /**
      * Compile the "select *" portion of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  Builder  $query
      * @param  array  $columns
      * @return string
      */
     protected function compileColumns(Builder $query, $columns)
     {
-        if (! is_null($query->aggregate)) {
+        if (!is_null($query->aggregate)) {
             return;
         }
 
@@ -181,7 +199,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "from" portion of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  Builder  $query
      * @param  string  $table
      * @return string
      */
@@ -193,9 +211,8 @@ class Grammar extends IlluminateGrammar
             return $from.' '.$query->lock;
         }
 
-        if (! is_null($query->lock)) {
-            return $from.' with(rowlock,'.
-                ($query->lock ? 'updlock,' : '').'holdlock)';
+        if (!is_null($query->lock)) {
+            return $from.' with(rowlock,'.($query->lock ? 'updlock,' : '').'holdlock)';
         }
 
         return $from;
@@ -204,7 +221,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "limit" portions of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  Builder  $query
      * @param  int  $limit
      * @return string
      */
@@ -216,7 +233,7 @@ class Grammar extends IlluminateGrammar
     /**
      * Compile the "offset" portions of the query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param  Builder  $query
      * @param  int  $offset
      * @return string
      */
@@ -227,29 +244,6 @@ class Grammar extends IlluminateGrammar
         }
 
         return '';
-    }
-
-    /**
-     * Compile a truncate table statement into SQL.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return array
-     */
-    public function compileTruncate(Builder $query)
-    {
-        return [
-            'truncate table '.$this->wrapTable($query->from) => [],
-        ];
-    }
-
-    /**
-     * Get the format for database stored dates.
-     *
-     * @return string
-     */
-    public function getDateFormat()
-    {
-        return 'Y-m-d H:i:s.000';
     }
 
     /**
