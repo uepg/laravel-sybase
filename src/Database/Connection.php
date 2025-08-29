@@ -376,11 +376,22 @@ class Connection extends IlluminateConnection
         $bindings = $this->compileBindings($query, $bindings);
         $partQuery = explode('?', $query);
 
-        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v, $bindings);
-        $bindings = array_map(fn ($v) => gettype($v) === 'string' ? "'{$v}'" : $v, $bindings);
-        $bindings = array_map(fn ($v) => gettype($v) === 'NULL' ? 'NULL' : $v, $bindings);
+        $bindings = array_map(function ($v) {
+            return gettype($v) === 'string' ? str_replace('\'', '\'\'', $v) : $v;
+        }, $bindings);
 
-        $newQuery = join(array_map(fn ($k1, $k2) => $k1.$k2, $partQuery, $bindings));
+        $bindings = array_map(function ($v) {
+            return gettype($v) === 'string' ? "'{$v}'" : $v;
+        }, $bindings);
+
+        $bindings = array_map(function ($v) {
+            return gettype($v) === 'NULL' ? 'NULL' : $v;
+        }, $bindings);
+
+        $newQuery = join(array_map(function ($k1, $k2) {
+            return $k1.$k2;
+        }, $partQuery, $bindings));
+
         $newQuery = str_replace('[]', '', $newQuery);
         $application_encoding = $this->applicationEncoding;
         if (is_null($application_encoding) || $application_encoding == false) {
@@ -427,7 +438,7 @@ class Connection extends IlluminateConnection
                 $result += $statement->fetchAll($this->getFetchMode());
             } while ($statement->nextRowset());
 
-            $result = [...$result];
+            $result = array_merge([], $result);
 
             $application_encoding = $this->applicationEncoding;
             if (is_null($application_encoding) || $application_encoding == false) {
