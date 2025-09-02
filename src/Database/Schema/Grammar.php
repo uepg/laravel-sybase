@@ -363,6 +363,18 @@ order by o.name
         return "sp_rename {$from}, ".$this->wrapTable($command->to);
     }
 
+    public function compileTables()
+    {
+        return "select
+    o.name                           as name,
+    user_name(o.uid)                 as [schema],
+    cast(reserved_pages(db_id(), o.id) as bigint) * @@maxpagesize as size_bytes
+from sysobjects o
+where o.type = 'U'
+order by o.name
+        ";
+    }
+
     /**
      * Create the column definition for a char type.
      *
