@@ -14,7 +14,7 @@
 
 Add the following in the require section of your **composer.json**:
 
-### Laravel >=7.x
+### Laravel 8, 9, 10
 ```json
 "uepg/laravel-sybase": "~4.0"
 ```
@@ -107,9 +107,9 @@ This package offers to method to charset conversion, it can be converted in appl
 To use the database layer conversion add the property charset to connection configuration on the sybase configuration array
 
 ```charset
-     'charset' => 'utf8',
-     'application_encoding' => false,
-     'application_charset' => '',
+     'database_charset' => 'CP850',
+     'application_encoding' => true,
+     'application_charset' => 'UTF8',
 ```
 
 

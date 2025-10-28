@@ -83,7 +83,7 @@ class Connection extends IlluminateConnection
                 throw new \Exception('When application encoding is configured, you need to set up application_charset and database_charset');
             }
             $this->applicationCharset = $config['application_charset'];
-            $this->databaseCharset = $config['charset'];
+            $this->databaseCharset = $config['database_charset'];
         }
     }
 
