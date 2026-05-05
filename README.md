@@ -119,6 +119,138 @@ To use the database layer conversion add the property charset to connection conf
 
 
 
+## Stored procedures (`rpc()`)
+
+Use `rpc()` on the Sybase connection to run stored procedures that return **exactly one final result set** (multiple trailing `SELECT` statements are not supported by this helper).
+
+### Result set convention (status columns)
+
+Design procedures that participate in this flow so the **only** result set returned to the client **always** includes at least these columns (names matched case-insensitively):
+
+| Column         | Role |
+|----------------|------|
+| **`cd_retorno`** | `0` = success; **`> 0`** = application / business error code expected by PHP (`throwOnError()`, `ProcedureExecutionException`). |
+| **`msg_retorno`**| Human-readable message for errors (and optional context on success); surfaced on the exception when `cd_retorno` ≠ 0. |
+
+**`throwOnError()`** inspects the **first row** only. **`get()`** / **`first()`** return whatever columns the procedure selects, but callers and tooling should rely on the same contract so every call can distinguish OK vs application error without ad hoc parsing.
+
+If a procedure omits `cd_retorno` (or returns no rows), `throwOnError()` cannot validate the outcome and will throw `InvalidArgumentException` as documented below.
+
+```php
+use Illuminate\Support\Facades\DB;
+
+$rows = DB::connection('sybase')
+    ->rpc('dbo.sp_exemplo')
+    ->with(['cd_pessoa_p' => $id]) // keys may include or omit a leading `@`
+    ->get(); // same row shape as Connection::select()
+
+// Positional arguments (values only), in the same order as the procedure parameters:
+$rows = DB::connection('sybase')
+    ->rpc('dbo.sp_exemplo')
+    ->with([$id, $nome])
+    ->get();
+
+$first = DB::connection('sybase')
+    ->rpc('dbo.sp_exemplo')
+    ->with(['@cd_pessoa_p' => $id])
+    ->first();
+
+DB::connection('sybase')
+    ->rpc('dbo.sp_exemplo')
+    ->with($dto) // Illuminate\Contracts\Support\Arrayable or associative array
+    ->throwOnError() // throws ProcedureExecutionException if cd_retorno != 0
+    ->first();
+```
+
+### Exceptions
+
+Execution still goes through `Connection::select()`, so **SQL and driver failures** surface as Laravel’s usual `Illuminate\Database\QueryException` (and related PDO errors), like any other query.
+
+**`Uepg\LaravelSybase\Database\ProcedureExecutionException`** (extends `RuntimeException`) is thrown by **`throwOnError()`** when the first row of the result set has **`cd_retorno` ≠ 0** (application-level error returned by the procedure). Use it to branch on business errors without inspecting the row manually:
+
+- **`$e->getMessage()`** — prefers `msg_retorno` when present, otherwise a short default message.
+- **`$e->getCode()`** — the numeric `cd_retorno` (also available as **`$e->cdRetorno`**).
+- **`$e->msgRetorno`** — optional string from the `msg_retorno` column (may be `null`).
+
+**`InvalidArgumentException`** is thrown by `RpcCall` for **invalid usage before or during `throwOnError()`**, including:
+
+- **Procedure name** passed to `rpc()` does not match the allowed pattern (empty or disallowed characters).
+- **Named parameters**: non-string keys, empty parameter name, or name not matching `^[a-zA-Z_][a-zA-Z0-9_]*$` (after stripping an optional leading `@`).
+- **`throwOnError()`**: result set is **empty**, or the first row has **no `cd_retorno` column** (case-insensitive match on column names).
+
+```php
+use Illuminate\Database\QueryException;
+use Uepg\LaravelSybase\Database\ProcedureExecutionException;
+
+try {
+    DB::connection('sybase')->rpc('dbo.sp_exemplo')->with(['id' => $id])->throwOnError();
+} catch (ProcedureExecutionException $e) {
+    // $e->cdRetorno, $e->msgRetorno, $e->getMessage()
+} catch (QueryException $e) {
+    // syntax, connectivity, Sybase errors, etc.
+}
+```
+
+
+
+
+### Hydrating results into DTOs
+
+Implement `Uepg\LaravelSybase\Contracts\RpcResultDto` on a class with `fromArray(array $row): static`, then use `firstAs()` for a single row or `getAs()` for every row as an `Illuminate\Support\Collection`:
+
+```php
+use Illuminate\Support\Facades\DB;
+use Uepg\LaravelSybase\Contracts\RpcResultDto;
+
+final class LoginRow implements RpcResultDto
+{
+    public function __construct(
+        public readonly int $cdRetorno,
+        public readonly ?string $msgRetorno,
+    ) {}
+
+    public static function fromArray(array $row): static
+    {
+        return new self(
+            cdRetorno: (int) ($row['cd_retorno'] ?? 0),
+            msgRetorno: isset($row['msg_retorno']) ? (string) $row['msg_retorno'] : null,
+        );
+    }
+}
+
+$row = DB::connection('sybase')
+    ->rpc('dbo.sp_exemplo')
+    ->with(['cd_pessoa_p' => $id])
+    ->throwOnError()
+    ->firstAs(LoginRow::class); // LoginRow|null
+
+$rows = DB::connection('sybase')
+    ->rpc('dbo.sp_lista')
+    ->with(['p' => 1])
+    ->getAs(LoginRow::class); // Collection<int, LoginRow>
+```
+
+
+
+
+
+
+
+Optional read path and fetch mode follow `select()`:
+
+```php
+DB::connection('sybase')
+    ->rpc('dbo.sp_exemplo')
+    ->with(['p' => 1])
+    ->useReadPdo(false)
+    ->fetchUsing([\PDO::FETCH_ASSOC])
+    ->get();
+```
+
+`toStatement()` returns the built SQL (`EXEC ... @name = ?, ...` or `EXEC ... ?, ?, ...`) and bindings (for logging or tests) without executing the procedure. A new `with()` that switches between a list and an associative array replaces the previous argument style for that call chain.
+
+This API does **not** cover `OUTPUT` parameters or procedures that return multiple result sets unless you handle them with a raw `select()` yourself.
+
 ## Configuring the cache
 As the library consults table information whenever it receives a request, caching can be used to avoid excessive queries
 

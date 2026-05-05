@@ -1,6 +1,6 @@
 {
     "name": "uepg/laravel-sybase",
-    "description": "Sybase based Eloquent module extension for Laravel 10.x",
+    "description": "Sybase based Eloquent module extension for Laravel 13.x",
     "keywords": [
         "sybase"
     ],
@@ -24,14 +24,15 @@
         "wiki": "https://github.com/uepg/laravel-sybase/wiki"
     },
     "require": {
-        "php": ">=8.1 | ^8.2",
+        "php": "^8.3",
         "doctrine/dbal": "^3.5.1",
+        "illuminate/database": "^13",
+        "illuminate/support": "^13",
         "ext-pdo": "*"
     },
     "require-dev": {
-        "orchestra/testbench": "*",
-        "nunomaduro/collision": "*",
-        "laravel/framework": "12.*"
+        "nunomaduro/collision": "^8.9",
+        "laravel/framework": "^13.0"
     },
     "extra": {
         "laravel": {

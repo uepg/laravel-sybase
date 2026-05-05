@@ -2,6 +2,17 @@
 
 ## [Unreleased](https://github.com/uepg/laravel-sybase/compare/2.2.3...master)
 
+
+## [6.0.0] - 2026-04-12
+
+### RpcCall (breaking)
+
+- **Removed** `RpcCall::assertOk()` — use `throwOnError()` instead (same behaviour and exceptions).
+- **Added** `RpcCall::throwOnError()` — validates `cd_retorno` on the first row and returns `$this` on success.
+- **Added** `RpcCall::firstAs(class-string<RpcResultDto>)` and `getAs(class-string<RpcResultDto>)` to hydrate rows into DTOs.
+- **Added** `Uepg\LaravelSybase\Contracts\RpcResultDto` — implement `fromArray(array $row): static` on result classes.
+
+
 ## [2.2.3 (2019-06-03)](https://github.com/uepg/laravel-sybase/compare/2.2.2...2.2.3)
 
 Fix #49 count must be an array
