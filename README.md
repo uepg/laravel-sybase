@@ -19,11 +19,14 @@ Add the following in the require section of your **composer.json**:
 ### Laravel 8 >= and <= 10
 "uepg/laravel-sybase": "~4"
 
-### Laravel 11 >=
+### Laravel 11 and 12
 ```json
 "uepg/laravel-sybase": "~5"
 ```
-
+### Laravel 13 >=
+```json
+"uepg/laravel-sybase": "~6"
+```
 Update the package dependencies executing:
 
 ```shell
