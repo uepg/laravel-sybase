@@ -61,7 +61,7 @@ Then read the [CHANGELOG](CHANGELOG.md): token signatures are now verified by de
 If you want to change routes or the default values for Keycloak, publish the config file:
 
 ```
-php artisan vendor:publish  --provider="uepg\KeycloakWebGuard\KeycloakWebGuardServiceProvider"
+php artisan vendor:publish  --provider="Uepg\KeycloakWebGuard\KeycloakWebGuardServiceProvider"
 
 ```
 
@@ -190,7 +190,7 @@ And change your provider config too:
 'providers' => [
     'users' => [
         'driver' => 'keycloak-users',
-        'model' => uepg\KeycloakWebGuard\Models\KeycloakUser::class,
+        'model' => Uepg\KeycloakWebGuard\Models\KeycloakUser::class,
     ],
 
     // ...
@@ -271,7 +271,7 @@ You can extend it and register your own middleware on Kernel.php or just use `Au
 
 We registered a new user provider that you configured on `config/auth.php` called "keycloak-users".
 
-In this same configuration you setted the model. So you can register your own model extending `uepg\KeycloakWebGuard\Models\KeycloakUser` class and changing this configuration.
+In this same configuration you setted the model. So you can register your own model extending `Uepg\KeycloakWebGuard\Models\KeycloakUser` class and changing this configuration.
 
 You can implement your own [User Provider](https://laravel.com/docs/5.8/authentication#adding-custom-user-providers): just remember to implement the `retrieveByCredentials` method receiving the Keycloak Profile information to retrieve a instance of model.
 
