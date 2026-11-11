@@ -162,13 +162,12 @@ class Connection extends IlluminateConnection
             }
 
             $result = [...$result];
-
-            $application_encoding = config('database.sybase.application_encoding');
+            $application_encoding = $this->applicationEncoding;
             if (is_null($application_encoding) || $application_encoding == false) {
                 return $result;
             }
-            $database_charset = config('database.sybase.database_charset');
-            $application_charset = config('database.sybase.application_charset');
+            $database_charset = $this->databaseCharset;
+            $application_charset = $this->applicationCharset;
             if (is_null($database_charset) || is_null($application_charset)) {
                 throw new \Exception('[SYBASE] Database Charset and App Charset not set');
             }
@@ -209,13 +208,12 @@ class Connection extends IlluminateConnection
 
         $newQuery = join(array_map(fn($k1, $k2) => $k1 . $k2, $partQuery, $bindings));
         $newQuery = str_replace('[]', '', $newQuery);
-        $application_encoding = config('database.sybase.application_encoding');
-
+        $application_encoding = $this->applicationEncoding;
         if (is_null($application_encoding) || $application_encoding == false) {
             return $newQuery;
         }
-        $database_charset = config('database.sybase.database_charset');
-        $application_charset = config('database.sybase.application_charset');
+        $database_charset = $this->databaseCharset;
+        $application_charset = $this->applicationCharset;
         if (is_null($database_charset) || is_null($application_charset)) {
             throw new \Exception('[SYBASE] Database Charset and App Charset not set');
         }
